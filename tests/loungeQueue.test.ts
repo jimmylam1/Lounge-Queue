@@ -17,6 +17,7 @@ const RESPONSES = {
     dropSuccess: {success: true, message: `Successfully dropped from the queue`},//
     notInQueue: {success: false, message: 'You are not in the queue'},//
 }
+const GUILD_ID = '0'
 
 function initPlayers(count: number) {
     const players: Player[] = []
@@ -38,11 +39,11 @@ describe('loungeQueueTests', () => {
     beforeAll(async () => {
         await initDb()
         await dbConnect(async db => {
-            await db.execute(`INSERT INTO loungeQueue (guildId, channelId, messageId, startTime, startedBy, active)
-                VALUES (?, ?, ?, ?, ?, ?)`, ["0", "0", "0", 0, "0", 1])
-            await db.execute(`INSERT INTO loungeQueue (guildId, channelId, messageId, startTime, startedBy, active)
-                VALUES (?, ?, ?, ?, ?, ?)`, ["0", "0", "1", 0, "0", 1])
-            await db.execute(`INSERT OR IGNORE INTO config (guildId, queueSize) VALUES (?, ?)`, ['0', '8'])
+            await db.execute(`INSERT INTO loungeQueue (guildId, channelId, messageId, startTime, active)
+                VALUES (?, ?, ?, ?, ?)`, [GUILD_ID, "0", "0", 0, 1])
+            await db.execute(`INSERT INTO loungeQueue (guildId, channelId, messageId, startTime, active)
+                VALUES (?, ?, ?, ?, ?)`, [GUILD_ID, "0", "1", 0, 1])
+            await db.execute(`INSERT OR IGNORE INTO config (guildId, minFullRooms, roomSize) VALUES (?, ?, ?)`, [GUILD_ID, 1, 8])
         })
     })
     
@@ -52,7 +53,6 @@ describe('loungeQueueTests', () => {
             const queue1 = await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = 1")
             await db.execute("DELETE FROM players WHERE queue = ? OR queue = ?", [queue0.id, queue1.id])
             await db.execute("DELETE FROM loungeQueue WHERE messageId = 0 OR messageId = 1")
-            await db.execute("DELETE FROM config WHERE guildId = 0")
         })
     })
 

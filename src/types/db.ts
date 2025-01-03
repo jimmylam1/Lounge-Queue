@@ -11,7 +11,8 @@ export type RunResult = {
 
 export type Config = {
     guildId: string;
-    queueSize: number
+    minFullRooms: number;
+    roomSize: number;
 }
 
 export type StaffRoles = {
@@ -26,8 +27,9 @@ export type LoungeQueue = {
     messageId: string;
     startTime: number;
     startedBy: string;
-    endTime: number | null;
+    endTime: number | null; // if number, the queue will automatically close once the time is up
     active: boolean;
+    format: number | null; // if number, specifies the number of teams per room (1 for FFA). null requires poll when queue closes
 }
 
 export type Players = {

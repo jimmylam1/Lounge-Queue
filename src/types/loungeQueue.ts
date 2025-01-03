@@ -4,7 +4,6 @@ export type LoungeQueueData = {
     channelId: string;
     messageId: string;
     startTime: number;
-    startedBy: string;
     endTime: number | null;
     active: boolean;
     queue: QueuePlayer[];

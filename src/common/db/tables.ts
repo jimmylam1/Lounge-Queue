@@ -1,11 +1,12 @@
 const config = `CREATE TABLE IF NOT EXISTS config(
     guildId TEXT PRIMARY KEY,
-    queueSize INTEGER NOT NULL
+    minFullRooms INTEGER NOT NULL,
+    roomSize INTEGER NOT NULL
 ) WITHOUT ROWID`
 
 const staffRoles = `CREATE TABLE IF NOT EXISTS staffRoles(
-    roleDiscordId INTEGER NOT NULL,
-    guildId TEXT NOT NULL REFERENCES config(guildId),
+    roleDiscordId TEXT NOT NULL,
+    guildId TEXT NOT NULL,
     PRIMARY KEY (roleDiscordId, guildId)
 ) WITHOUT ROWID`
 
@@ -17,7 +18,8 @@ const loungeQueue = `CREATE TABLE IF NOT EXISTS loungeQueue(
     startTime INTEGER NOT NULL,
     startedBy TEXT NOT NULL,
     endTime INTEGER,
-    active BOOLEAN NOT NULL
+    active BOOLEAN NOT NULL,
+    format INTEGER
 )`
 
 const players = `CREATE TABLE IF NOT EXISTS players(

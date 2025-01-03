@@ -4,7 +4,7 @@ import { tables } from "./tables";
 export default async function initDb() {
     await dbConnect(async (db) => {
         for (let table of tables) {
-            db.execute(table).catch(e => e && console.log(`${table}\n${e}`))
+            await db.execute(table).catch(e => e && console.log(`${table}\n${e}`))
         }
     }).catch(e => console.error(`db init failed: ${e}`))
 }
