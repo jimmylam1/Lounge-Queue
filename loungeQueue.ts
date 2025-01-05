@@ -5,6 +5,7 @@ import { guildConfig } from "./src/common/data/guildConfig";
 import { replyButton, slashReply } from "./src/common/util";
 import './src/managers/publicCommands';
 import initDb from "./src/common/db/init";
+import { runInterval } from "./src/managers/interval";
 dotenv.config();
 initDb()
 
@@ -16,6 +17,7 @@ client.login(process.env.TOKEN)
 
 client.once('ready', (client) => {
     console.log(`Logged in as ${client.user.tag}!`)
+    runInterval(client)
 })
 
 client.on('interactionCreate', (interaction) => {

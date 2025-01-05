@@ -57,14 +57,21 @@ export function defaultRandomizeTeams(players: QueuePlayer[], format: FormatOpti
 }
 
 export function formatTeams(teams: QueuePlayer[][]) {
-    const roomMmr = findRoomMmr(teams)
+    function sortTeamsByMmr() {
+        let arr = teams.map((team, idx) => ({idx, teamMmr: findTeamMmr(team)}))
+        arr.sort((a, b) => b.teamMmr - a.teamMmr)
+        return arr.map(i => teams[i.idx])
+    }
+
+    const sortedTeams = sortTeamsByMmr()
+    const roomMmr = findRoomMmr(sortedTeams)
     let text = `**Room MMR: ${roomMmr}**\n`
-    for (let i = 0; i < teams.length; i++) {
-        if (teams[0].length === 1)
-            text += `${i+1}. ${teams[i][0].name} (${teams[i][0].mmr} MMR)\n`
+    for (let i = 0; i < sortedTeams.length; i++) {
+        if (sortedTeams[0].length === 1)
+            text += `${i+1}. ${sortedTeams[i][0].name} (${sortedTeams[i][0].mmr} MMR)\n`
         else {
-            const teamMmr = findTeamMmr(teams[i])
-            text += `\`Team ${i+1}\`: ${teams[i].map(p => p.name).join(', ')} (${teamMmr} MMR)\n`
+            const teamMmr = findTeamMmr(sortedTeams[i])
+            text += `\`Team ${i+1}\`: ${sortedTeams[i].map(p => p.name).join(', ')} (${teamMmr} MMR)\n`
         }
     }
     return text

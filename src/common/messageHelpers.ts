@@ -20,6 +20,9 @@ export function queueMessageEmbed(queueList: string, active: boolean, format?: F
     }
     if (format)
         embedOptions.footer = {text: `Lounge Queue format: ${format}`}
+    else
+        embedOptions.footer = {text: `A poll will be created in each room once this queue closes.`}
+
     return embedOptions
 }
 
@@ -231,8 +234,8 @@ export async function closePoll(message: Message) {
     const { voteText, winningFormat } = await getPollVotes(message.guild.id, votes, true)
     const players = await getPlayersInRoom(message.channel.id)
     const teams = guildConfig[message.guild.id].randomizeTeams(players, winningFormat)
-    let text = voteText + `${formatTeams(teams)}\n`
-                + `-# Use /scoreboard to get the scoreboard\n`
+    let text = voteText + `\n\n${formatTeams(teams)}\n`
+                + `-# (Use /scoreboard to get the scoreboard)\n`
     const scoreboard = getScoreboard(teams)
     await dbConnect(async db => {
         return await db.execute("UPDATE rooms SET scoreboard = ? WHERE roomChannelId = ?", [scoreboard, message.channel.id])
