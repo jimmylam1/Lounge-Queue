@@ -1,4 +1,4 @@
-import { Client, CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbedOptions, TextBasedChannel, TextChannel, ThreadChannel } from "discord.js";
+import { Client, CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbedOptions, TextChannel, ThreadChannel } from "discord.js";
 import { dbConnect } from "./db/connect";
 import { getRooms, list } from "./core";
 import { LoungeQueue, Votes } from "../types/db";
@@ -45,7 +45,7 @@ export function queueButtons() {
 /**
  * Create a new lounge queue message. Returns true if successful
  */
-export async function createLoungeQueue(guildId: string, channel: TextBasedChannel, autoClose: number | null, format?: FormatOption) {
+export async function createLoungeQueue(guildId: string, channel: TextChannel, autoClose: number | null, format?: FormatOption) {
     const message = await channel.send({embeds: [{description: 'Initializing...'}]})
 
     const query = `INSERT INTO loungeQueue 
@@ -79,7 +79,11 @@ export async function updateLoungeQueueMessage(message: Message, active: boolean
     if (!queueList.success)
         return
 
-    const embed = queueMessageEmbed(queueList.message, active)
+    const queue = await dbConnect(async db => {
+        return await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = ?", [message.id])
+    })
+
+    const embed = queueMessageEmbed(queueList.message, active, queue?.format || undefined)
     const buttons = queueButtons()
     const components = active ? [buttons] : []
     await message.edit({embeds: [embed], components})
