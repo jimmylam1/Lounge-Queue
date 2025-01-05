@@ -1,13 +1,6 @@
+import { LoungeQueue } from "./db";
+import { FormatOption } from "./guildConfig";
 import { QueuePlayer } from "./player";
-
-export type LoungeQueueData = {
-    channelId: string;
-    messageId: string;
-    startTime: number;
-    endTime: number | null;
-    active: boolean;
-    queue: QueuePlayer[];
-}
 
 export type SuccessStatus = {
     success: boolean;
@@ -17,4 +10,10 @@ export type SuccessStatus = {
 export type RoomInfo = {
     rooms: QueuePlayer[][];
     latePlayers: QueuePlayer[];
+    queue: LoungeQueue | null;
+}
+
+export type PollVotes = {
+    voteText: string;
+    winningFormat: FormatOption;
 }

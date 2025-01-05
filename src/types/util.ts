@@ -1,3 +1,3 @@
-export type SlashReplyOptions = {
+export type ReplyOptions = {
     deleteTime?: number;
 }

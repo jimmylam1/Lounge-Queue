@@ -1,0 +1,1 @@
+When adding or removing a command, update the appropriate file in the 'managers' directory

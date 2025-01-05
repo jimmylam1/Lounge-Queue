@@ -22,7 +22,7 @@ export async function dbConnect<T>(callbackFn: (db: sqlite3Wrapper) => Promise<T
                 })
             })
         },
-        fetchOne: <T>(sql: string, params: any[] = []): Promise<T> => {
+        fetchOne: <T>(sql: string, params: any[] = []): Promise<T | undefined> => {
             return new Promise((resolve, reject) => {
                 sql3.get(sql, params, (err, row: T) => {
                     err ? reject(err) : resolve(row)

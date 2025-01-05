@@ -1,7 +1,8 @@
-import { Config, LoungeQueue } from "../types/db";
+import { LoungeQueue } from "../types/db";
 import { SuccessStatus, RoomInfo } from "../types/loungeQueue";
 import { Player, QueuePlayer } from "../types/player";
 import { dbConnect } from "./db/connect";
+import { guildConfig } from "./data/guildConfig";
 import { currentFullRoomsCount, playersNeededForFullRooms } from "./util";
 
 export async function addPlayer(player: Player, messageId: string): Promise<SuccessStatus> {
@@ -27,7 +28,7 @@ export async function addPlayer(player: Player, messageId: string): Promise<Succ
     return res
 }
 
-export async function removePlayer(player: Player, messageId: string): Promise<SuccessStatus> {
+export async function removePlayer(playerDiscordId: string, messageId: string): Promise<SuccessStatus> {
     const res = await dbConnect(async db => {
         const queue = await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = ?", [messageId]).catch(e => console.error(`core.ts removePlayer select queue failed ${e}`))
         if (!queue)
@@ -36,7 +37,7 @@ export async function removePlayer(player: Player, messageId: string): Promise<S
             return {success: false, message: 'Unable to drop from the queue because it is closed'}
 
         try {
-            var { changes } = await db.execute("DELETE FROM players WHERE discordId = ? AND queue = ?", [player.discordId, queue.id])
+            var { changes } = await db.execute("DELETE FROM players WHERE discordId = ? AND queue = ?", [playerDiscordId, queue.id])
         }
         catch(e) {
             console.error(`core.ts removePlayer delete failed ${e}`)
@@ -51,18 +52,20 @@ export async function removePlayer(player: Player, messageId: string): Promise<S
     return res
 }
 
-export async function list(messageId: string): Promise<string> {
+export async function list(messageId: string): Promise<SuccessStatus> {
     const res = await dbConnect(async db => {
         try {
             var queue = await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = ?", [messageId])
+            if (!queue)
+                throw new Error('failed to fetch loungeQueue from db')
             var players = await db.fetchAll<QueuePlayer>("SELECT * FROM players WHERE queue = ? ORDER BY id ASC", [queue.id])
-            var config = await db.fetchOne<Config>("SELECT * FROM config WHERE guildId = ?", [queue.guildId])
         }
         catch(e) {
             console.error(`core.ts list() ${e}`)
-            return 'There was a problem listing the players in the queue'
+            return {success: false, message: 'There was a problem listing the players in the queue'}
         }
 
+        const config = guildConfig[queue.guildId]
         let text = "`Queue List`\n\n";
         for (let i = 0; i < players.length; i++) {
             text += `${i+1}. ${players[i].name} (${players[i].mmr} MMR)\n`;
@@ -73,7 +76,7 @@ export async function list(messageId: string): Promise<string> {
                 text += "\n"
             text += `(+${playersNeededForFullRooms(players.length, config.roomSize)} players for ${currentFullRoomsCount(players.length, config.roomSize) + 1} full rooms)`;
         }
-        return text;
+        return {success: true, message: text};
     })
 
     return res
@@ -83,12 +86,13 @@ export async function getRooms(messageId: string): Promise<RoomInfo> {
     const res = await dbConnect(async db => {
         try {
             var queue = await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = ?", [messageId])
+            if (!queue)
+                throw new Error('failed to fetch loungeQueue from db')
             var list = await db.fetchAll<QueuePlayer>("SELECT * FROM players WHERE queue = ? ORDER BY id ASC", [queue.id])
-            var config = await db.fetchOne<Config>("SELECT * FROM config WHERE guildId = ?", [queue.guildId])
-
+            var config = guildConfig[queue.guildId]
         }
         catch(e) {
-            return {rooms: [], latePlayers: []}
+            return {rooms: [], latePlayers: [], queue: null}
         }
 
         const eligiblePlayers = list.slice(0, currentFullRoomsCount(list.length, config.roomSize)*config.roomSize)
@@ -103,7 +107,8 @@ export async function getRooms(messageId: string): Promise<RoomInfo> {
 
         return {
             rooms,
-            latePlayers
+            latePlayers,
+            queue
         }
     })
 

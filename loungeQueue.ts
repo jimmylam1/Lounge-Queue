@@ -1,9 +1,14 @@
 import dotenv from "dotenv";
-import Discord from "discord.js";
-import { buttonEvent, slashCommandEvent } from "./src/common/discordEvents";
+import { Client } from "discord.js";
+import { autocompleteEvent, buttonEvent, slashCommandEvent } from "./src/common/discordEvents";
+import { guildConfig } from "./src/common/data/guildConfig";
+import { replyButton, slashReply } from "./src/common/util";
+import './src/managers/publicCommands';
+import initDb from "./src/common/db/init";
 dotenv.config();
+initDb()
 
-const client = new Discord.Client({
+const client = new Client({
     intents: ["GUILDS", "GUILD_MESSAGES"],
 });
 
@@ -14,13 +19,23 @@ client.once('ready', (client) => {
 })
 
 client.on('interactionCreate', (interaction) => {
-    // todo: create a file to get mmr for a guild, slashreply if guild not implemented
     if (!interaction.guild)
         return
+
     if (interaction.isCommand()) {
+        if (!guildConfig[interaction.guild.id]) 
+            return slashReply(interaction, {content: `This server is not set up to use this bot. Contact jimmy5440 for more info.`, ephemeral: true})
         slashCommandEvent.emit(interaction.commandName, interaction)
     }
+
     else if (interaction.isButton()) {
+        if (!guildConfig[interaction.guild.id]) 
+            return replyButton(interaction, {content: `This server is not set up to use this bot. Contact jimmy5440 for more info.`, ephemeral: true})
         buttonEvent.emit(interaction.customId.split("|")[0], interaction)
+    }
+    else if (interaction.isAutocomplete()) {
+        if (!guildConfig[interaction.guild.id]) 
+            return interaction.respond([]).catch(e => console.error(`loungeQueue.ts autocomplete !guildConfig[interaction.guild.id] failed ${e}`))
+        autocompleteEvent.emit(interaction.commandName, interaction)
     }
 })

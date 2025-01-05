@@ -1,37 +1,25 @@
 import { afterAll, describe, expect, test } from "@jest/globals"
 import { dbConnect } from "../src/common/db/connect"
-import { listConfig } from "../src/common/commands/config"
+import { listConfig } from "../src/common/textFormatters"
 
-const GUILD_ID = '1'
+const GUILD_ID = '0'
 
 describe('config tests', () => {
     afterAll(async () => {
         await dbConnect(async db => {
-            await db.execute(`DELETE FROM config WHERE guildId = ${GUILD_ID}`)
             await db.execute(`DELETE FROM staffRoles WHERE guildId = ${GUILD_ID}`)
         })
     })
     
     test('Test listing config', async () => {
-        await dbConnect(async db => {
-            await db.execute(`INSERT OR IGNORE INTO config (guildId, minFullRooms, roomSize) VALUES (?, ?, ?)`, [GUILD_ID, 1, 8])
-        })
-    
         // base case
         let expected = "`Server configuration`\n"
+                     + `queue-staff: None\n`
+                     + '\n'
+                     + 'The config options below can only be set by the bot developer\n'
                      + `min-full-rooms: 1\n`
                      + `room-size: 8\n`
-                     + `queue-staff: None\n`
-        await expect(listConfig(GUILD_ID)).resolves.toEqual(expected)
-    
-        // change config table
-        await dbConnect(async db => {
-            await db.execute(`UPDATE config SET minFullRooms = ?, roomSize = ? WHERE guildId = ?`, [2, 12, GUILD_ID])
-        })
-        expected = "`Server configuration`\n"
-                 + `min-full-rooms: 2\n`
-                 + `room-size: 12\n`
-                 + `queue-staff: None\n`
+                     + `formats: FFA, 2v2, 4v4\n`
         await expect(listConfig(GUILD_ID)).resolves.toEqual(expected)
     
         // add 1 staff role
@@ -39,9 +27,12 @@ describe('config tests', () => {
             await db.execute(`INSERT INTO staffRoles (roleDiscordId, guildId) VALUES (?, ?)`, ['11111', GUILD_ID])
         })
         expected = "`Server configuration`\n"
-                 + `min-full-rooms: 2\n`
-                 + `room-size: 12\n`
                  + `queue-staff: <@&11111>\n`
+                 + '\n'
+                 + 'The config options below can only be set by the bot developer\n'
+                 + `min-full-rooms: 1\n`
+                 + `room-size: 8\n`
+                 + `formats: FFA, 2v2, 4v4\n`
         await expect(listConfig(GUILD_ID)).resolves.toEqual(expected)
     
         // add another staff role
@@ -49,11 +40,12 @@ describe('config tests', () => {
             await db.execute(`INSERT INTO staffRoles (roleDiscordId, guildId) VALUES (?, ?)`, ['22222', GUILD_ID])
         })
         expected = "`Server configuration`\n"
-                    + `min-full-rooms: 2\n`
-                    + `room-size: 12\n`
-                    + `queue-staff: <@&11111>, <@&22222>\n`
+                 + `queue-staff: <@&11111>, <@&22222>\n`
+                 + '\n'
+                 + 'The config options below can only be set by the bot developer\n'
+                 + `min-full-rooms: 1\n`
+                 + `room-size: 8\n`
+                 + `formats: FFA, 2v2, 4v4\n`
         await expect(listConfig(GUILD_ID)).resolves.toEqual(expected)
-    
-        // cleanup
     })
 })

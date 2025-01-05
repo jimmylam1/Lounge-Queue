@@ -1,6 +1,4 @@
-import { promisify } from "util";
-
-const sleep = promisify(setTimeout);
+import { sleep } from "./util"
 
 class ConcurrencyLock {
     private id = 0

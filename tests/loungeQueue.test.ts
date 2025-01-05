@@ -29,8 +29,10 @@ function initPlayers(count: number) {
 
 async function queueSize() {
     return await dbConnect(async db => {
-        const { id } = await db.fetchOne<LoungeQueue>("SELECT id FROM loungeQueue WHERE messageId = 0")
-        const players = await db.fetchAll<QueuePlayer>("SELECT * FROM players WHERE queue = ?", [id])
+        const queue = await db.fetchOne<LoungeQueue>("SELECT id FROM loungeQueue WHERE messageId = 0")
+        if (!queue)
+            return -1
+        const players = await db.fetchAll<QueuePlayer>("SELECT * FROM players WHERE queue = ?", [queue.id])
         return players.length
     })
 }
@@ -43,7 +45,6 @@ describe('loungeQueueTests', () => {
                 VALUES (?, ?, ?, ?, ?)`, [GUILD_ID, "0", "0", 0, 1])
             await db.execute(`INSERT INTO loungeQueue (guildId, channelId, messageId, startTime, active)
                 VALUES (?, ?, ?, ?, ?)`, [GUILD_ID, "0", "1", 0, 1])
-            await db.execute(`INSERT OR IGNORE INTO config (guildId, minFullRooms, roomSize) VALUES (?, ?, ?)`, [GUILD_ID, 1, 8])
         })
     })
     
@@ -51,7 +52,8 @@ describe('loungeQueueTests', () => {
         await dbConnect(async db => {
             const queue0 = await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = 0")
             const queue1 = await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = 1")
-            await db.execute("DELETE FROM players WHERE queue = ? OR queue = ?", [queue0.id, queue1.id])
+            if (queue0 && queue1)
+                await db.execute("DELETE FROM players WHERE queue = ? OR queue = ?", [queue0.id, queue1.id])
             await db.execute("DELETE FROM loungeQueue WHERE messageId = 0 OR messageId = 1")
         })
     })
@@ -63,8 +65,8 @@ describe('loungeQueueTests', () => {
         await expect(addPlayer(players[0], "0")).resolves.toStrictEqual(RESPONSES.alreadyInQueue)
         await expect(queueSize()).resolves.toEqual(1)
     
-        await expect(removePlayer(players[0], "0")).resolves.toStrictEqual(RESPONSES.dropSuccess)
-        await expect(removePlayer(players[0], "0")).resolves.toStrictEqual(RESPONSES.notInQueue)
+        await expect(removePlayer(players[0].discordId, "0")).resolves.toStrictEqual(RESPONSES.dropSuccess)
+        await expect(removePlayer(players[0].discordId, "0")).resolves.toStrictEqual(RESPONSES.notInQueue)
         await expect(queueSize()).resolves.toEqual(0)
     })
 
@@ -76,10 +78,10 @@ describe('loungeQueueTests', () => {
         await expect(queueSize()).resolves.toEqual(1)
 
         await closeQueue('0')
-        await expect(removePlayer(players[0], "0")).resolves.toStrictEqual(RESPONSES.dropClosed)
+        await expect(removePlayer(players[0].discordId, "0")).resolves.toStrictEqual(RESPONSES.dropClosed)
         await expect(queueSize()).resolves.toEqual(1)
         await openQueue('0')
-        await expect(removePlayer(players[0], "0")).resolves.toStrictEqual(RESPONSES.dropSuccess)
+        await expect(removePlayer(players[0].discordId, "0")).resolves.toStrictEqual(RESPONSES.dropSuccess)
         await expect(queueSize()).resolves.toEqual(0)
     })
 
@@ -94,11 +96,11 @@ describe('loungeQueueTests', () => {
         await expect(queueSize()).resolves.toEqual(20)
         
         for (let i = 0; i < players.length; i++) {
-            await expect(removePlayer(players[i], '0')).resolves.toStrictEqual(RESPONSES.dropSuccess)
+            await expect(removePlayer(players[i].discordId, '0')).resolves.toStrictEqual(RESPONSES.dropSuccess)
         }
         await expect(queueSize()).resolves.toEqual(0)
         for (let i = 0; i < players.length; i++) {
-            await expect(removePlayer(players[i], '0')).resolves.toStrictEqual(RESPONSES.notInQueue)
+            await expect(removePlayer(players[i].discordId, '0')).resolves.toStrictEqual(RESPONSES.notInQueue)
         }
         await expect(queueSize()).resolves.toEqual(0)
     })
@@ -116,13 +118,13 @@ describe('loungeQueueTests', () => {
         await expect(queueSize()).resolves.toEqual(10)
         
         for (let i = 0; i < 10; i++) {
-            await expect(removePlayer(players[i], '0')).resolves.toStrictEqual(RESPONSES.dropClosed)
+            await expect(removePlayer(players[i].discordId, '0')).resolves.toStrictEqual(RESPONSES.dropClosed)
         }
         await expect(queueSize()).resolves.toEqual(10)
 
         await openQueue('0')
         for (let i = 0; i < 10; i++) {
-            await expect(removePlayer(players[i], '0')).resolves.toStrictEqual(RESPONSES.dropSuccess)
+            await expect(removePlayer(players[i].discordId, '0')).resolves.toStrictEqual(RESPONSES.dropSuccess)
         }
         await expect(queueSize()).resolves.toEqual(0)
     })
@@ -130,14 +132,14 @@ describe('loungeQueueTests', () => {
     test('Test LoungeQueue list players', async () => {
         // incorrect queue, supress console error
         const spy = spyOn(console, 'error').mockImplementation(() => {})
-        await expect(list('2')).resolves.toEqual('There was a problem listing the players in the queue')
+        await expect(list('2')).resolves.toHaveProperty('message', 'There was a problem listing the players in the queue')
         spy.mockRestore()
 
         // 0 players
         let expected = "`Queue List`\n"
                      + "\n"
                      + "(+8 players for 1 full rooms)"
-        await expect(list('0')).resolves.toEqual(expected)
+        await expect(list('0')).resolves.toHaveProperty('message', expected)
 
         // 1 player
         await addPlayer(players[0], '0')
@@ -146,7 +148,7 @@ describe('loungeQueueTests', () => {
         + "1. Player 1 (750 MMR)\n"
         + "\n"
         + "(+7 players for 1 full rooms)"
-        await expect(list('0')).resolves.toEqual(expected)
+        await expect(list('0')).resolves.toHaveProperty('message', expected)
 
         // 7 players
         for (let i = 1; i < 7; i++) {
@@ -163,7 +165,7 @@ describe('loungeQueueTests', () => {
         + "7. Player 7 (2250 MMR)\n"
         + "\n"
         + "(+1 players for 1 full rooms)"
-        await expect(list('0')).resolves.toEqual(expected)
+        await expect(list('0')).resolves.toHaveProperty('message', expected)
 
         // 8 players
         await addPlayer(players[7], '0')
@@ -177,7 +179,7 @@ describe('loungeQueueTests', () => {
         + "6. Player 6 (2000 MMR)\n"
         + "7. Player 7 (2250 MMR)\n"
         + "8. Player 8 (2500 MMR)\n"
-        await expect(list('0')).resolves.toEqual(expected)
+        await expect(list('0')).resolves.toHaveProperty('message', expected)
 
         // 9 players
         await addPlayer(players[8], '0')
@@ -194,10 +196,10 @@ describe('loungeQueueTests', () => {
         + "9. Player 9 (2750 MMR)\n"
         + "\n"
         + "(+7 players for 2 full rooms)"
-        await expect(list('0')).resolves.toEqual(expected)
+        await expect(list('0')).resolves.toHaveProperty('message', expected)
 
         // player 7 drops
-        await removePlayer(players[6], '0')
+        await removePlayer(players[6].discordId, '0')
         expected = "`Queue List`\n"
         + "\n"
         + "1. Player 1 (750 MMR)\n"
@@ -208,7 +210,7 @@ describe('loungeQueueTests', () => {
         + "6. Player 6 (2000 MMR)\n"
         + "7. Player 8 (2500 MMR)\n"
         + "8. Player 9 (2750 MMR)\n"
-        await expect(list('0')).resolves.toEqual(expected)
+        await expect(list('0')).resolves.toHaveProperty('message', expected)
     })
 
     function queuePlayersToPlayer(queuePlayers: QueuePlayer[]): Player[] {
@@ -225,8 +227,9 @@ describe('loungeQueueTests', () => {
 
     test("Test LoungeQueue getRooms()", async () => {
         await dbConnect(async db => {
-            const { id } = await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = 0")
-            await db.execute("DELETE FROM players WHERE queue = ?", [id])
+            const queue = await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = 0")
+            if (queue)
+                await db.execute("DELETE FROM players WHERE queue = ?", [queue.id])
         })
 
         let rooms: Player[][] = []
@@ -281,7 +284,7 @@ describe('loungeQueueTests', () => {
         expect(queuePlayersToPlayer(res.latePlayers)).toEqual(latePlayers)
 
         // player 7 drops, down to 15 players
-        const removedPlayer = await removePlayer(players[6], '0')
+        const removedPlayer = await removePlayer(players[6].discordId, '0')
         expect(removedPlayer.success).toEqual(true)
         rooms[0] = rooms[0].filter(p => p.discordId !== '6')
         const removed = rooms[1].shift()
@@ -296,8 +299,9 @@ describe('loungeQueueTests', () => {
 
     test("Test LoungeQueue 2 simultaneous queues", async () => {
         await dbConnect(async db => {
-            const { id } = await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = 0")
-            await db.execute("DELETE FROM players WHERE queue = ?", [id])
+            const queue = await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = 0")
+            if (queue)
+                await db.execute("DELETE FROM players WHERE queue = ?", [queue.id])
         })
 
         let room0: Player[] = []
