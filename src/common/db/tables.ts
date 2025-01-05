@@ -28,6 +28,7 @@ const players = `CREATE TABLE IF NOT EXISTS players(
 
 const rooms = `CREATE TABLE IF NOT EXISTS rooms(
     roomChannelId TEXT PRIMARY KEY NOT NULL,
+    queue INTEGER NOT NULL REFERENCES loungeQueue(id),
     createdAt INT NOT NULL,
     pollMessageId TEXT,
     scoreboard TEXT

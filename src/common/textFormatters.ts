@@ -3,7 +3,7 @@ import { StaffRoles, Votes } from "../types/db";
 import { guildConfig } from "./data/guildConfig";
 import { QueuePlayer } from "../types/player";
 import { FormatOption } from "../types/guildConfig";
-import { findRoomMmr, findTeamMmr, shuffleArray } from "./util";
+import { findRoomMmr, findTeamMmr } from "./util";
 import { PollVotes } from "../types/loungeQueue";
 
 export async function listConfig(guildId: string) {
@@ -36,24 +36,6 @@ export async function listQueueRoom(players: QueuePlayer[], roomNumber: number) 
         text += `${i+1}. ${players[i].name} (${players[i].mmr} MMR)\n`
     }
     return text
-}
-
-export function defaultRandomizeTeams(players: QueuePlayer[], format: FormatOption) {
-    const playersPerTeam: {[key in FormatOption]: number} = {
-        'FFA': 1,
-        '2v2': 2,
-        '3v3': 3,
-        '4v4': 4,
-        '5v5': 5,
-        '6v6': 6,
-    }
-
-    const shuffled = shuffleArray(players)
-    const teams: QueuePlayer[][] = []
-    for (let i = 0; i < players.length; i += playersPerTeam[format]) {
-        teams.push(shuffled.slice(i, i+playersPerTeam[format]))
-    }
-    return teams
 }
 
 export function formatTeams(teams: QueuePlayer[][]) {

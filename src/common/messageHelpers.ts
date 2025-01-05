@@ -142,7 +142,7 @@ export async function makeRooms(message: Message) {
             name: `Room ${i+1}`,
             type: 'GUILD_PRIVATE_THREAD',
             invitable: false,
-            autoArchiveDuration: ThreadAutoArchiveDuration.OneDay
+            autoArchiveDuration: ThreadAutoArchiveDuration.OneHour
         })
 
         await setPlayerRooms(roomInfo.rooms[i], roomInfo.queue.id, channel.id)
@@ -157,12 +157,12 @@ export async function makeRooms(message: Message) {
             channelText += `-# Use /scoreboard to get the scoreboard\n`
             const scoreboard = getScoreboard(teams)
             await dbConnect(async db => {
-                return await db.execute("INSERT INTO rooms (roomChannelId, createdAt, scoreboard) VALUES (?, ?, ?)", [channel.id, Date.now(), scoreboard])
+                return await db.execute("INSERT INTO rooms (roomChannelId, queue, createdAt, scoreboard) VALUES (?, ?, ?, ?)", [channel.id, roomInfo.queue!.id, Date.now(), scoreboard])
             })
         }
         await channel.send(channelText)
         if (!roomInfo.queue.format)
-            await createPoll(channel)
+            await createPoll(channel, roomInfo.queue)
         await sleep(1000)
     }
 
@@ -214,21 +214,22 @@ export async function getPlayersInRoom(roomChannelId: string) {
     })
 }
 
-async function createPoll(channel: ThreadChannel) {
+async function createPoll(channel: ThreadChannel, queue: LoungeQueue) {
     const { voteText } = await getPollVotes(channel.guild.id, [], false)
     const buttons = pollButtons(guildConfig[channel.guild.id].formats)
     const message = await channel.send({content: voteText, components: [buttons]})
     await dbConnect(async db => {
-        return await db.execute("INSERT INTO rooms (roomChannelId, createdAt, pollMessageId) VALUES (?, ?, ?)", [channel.id, Date.now(), message.id])
+        return await db.execute("INSERT INTO rooms (roomChannelId, queue, createdAt, pollMessageId) VALUES (?, ?, ?, ?)", [channel.id, queue.id, Date.now(), message.id])
     })
 }
 
 /**
  * @param message The poll message
+ * @returns Returns true if successful
  */
 export async function closePoll(message: Message) {
     if (!message.guild)
-        return
+        return false
 
     const votes = await dbConnect(async db => {
         return await db.fetchAll<Votes>("SELECT * FROM votes WHERE roomChannelId = ? ORDER BY updated ASC", [message.channel.id])
@@ -245,5 +246,5 @@ export async function closePoll(message: Message) {
         return await db.execute("UPDATE rooms SET scoreboard = ? WHERE roomChannelId = ?", [scoreboard, message.channel.id])
     })
     await message.channel.send(text)
-    return
+    return true
 }

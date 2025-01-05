@@ -6,10 +6,8 @@ export type sqlite3Wrapper = {
     fetchAll: <T>(sql: string, params?: any[]) => Promise<T[]>;
 }
 
-export type RunResult = {
-    lastID: number;
-    changes: number;
-}
+////////////////////////////////////////
+// database tables
 
 export type StaffRoles = {
     roleDiscordId: string;
@@ -38,6 +36,7 @@ export type Players = {
 
 export type Rooms = {
     roomChannelId: string;
+    queue: number;
     createdAt: number;
     pollMessageId: string | null;
     scoreboard: string | null;
@@ -49,4 +48,16 @@ export type Votes = {
     playerDiscordId: string;
     vote: FormatOption;
     updated: number;
+}
+
+////////////////////////////////////////
+// helper types
+
+export type RunResult = {
+    lastID: number;
+    changes: number;
+}
+
+export type RoomsWithGuildId = Rooms & {
+    guildId: string
 }

@@ -7,5 +7,6 @@ export type GuildConfig = {
     roomSize: number;
     formats: FormatOption[];
     getMmr: (playerName: string) => Promise<number | null>;
-    randomizeTeams: (players: QueuePlayer[], format: FormatOption) => QueuePlayer[][]
+    randomizeTeams: (players: QueuePlayer[], format: FormatOption) => QueuePlayer[][];
+    deleteOldRooms: boolean;
 }
