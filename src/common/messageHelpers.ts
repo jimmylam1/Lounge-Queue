@@ -140,9 +140,6 @@ export async function makeRooms(message: Message) {
     }
 
     for (let i = 0; i < roomInfo.rooms.length; i++) {
-        const roomText = await listQueueRoom(roomInfo.rooms[i], i+1)
-        await message.channel.send(roomText)
-        
         const channel = await message.channel.threads.create({
             name: `Room ${i+1}`,
             type: 'GUILD_PRIVATE_THREAD',
@@ -150,6 +147,8 @@ export async function makeRooms(message: Message) {
             autoArchiveDuration: ThreadAutoArchiveDuration.OneHour
         })
 
+        const roomText = await listQueueRoom(roomInfo.rooms[i], i+1, channel.id)
+        await message.channel.send(roomText)
         await setPlayerRooms(roomInfo.rooms[i], roomInfo.queue.id, channel.id)
 
         let channelText = `${roomInfo.rooms[i].map(p => `<@${p.discordId}>`).join(', ')}\n\n`
@@ -159,7 +158,7 @@ export async function makeRooms(message: Message) {
         if (roomInfo.queue.format) {
             const teams = guildConfig[channel.guild.id].randomizeTeams(roomInfo.rooms[i], roomInfo.queue.format)
             channelText += `${formatTeams(teams)}\n`
-            channelText += `-# Use /scoreboard to get the scoreboard\n`
+            channelText += `-# (Use /scoreboard to get the scoreboard)\n`
             const scoreboard = getScoreboard(teams)
             await dbConnect(async db => {
                 return await db.execute("INSERT INTO rooms (roomChannelId, queue, createdAt, scoreboard) VALUES (?, ?, ?, ?)", [channel.id, roomInfo.queue!.id, Date.now(), scoreboard])
@@ -168,15 +167,14 @@ export async function makeRooms(message: Message) {
         await channel.send(channelText)
         if (!roomInfo.queue.format)
             await createPoll(channel, roomInfo.queue)
-        await sleep(1000)
     }
 
     if (roomInfo.latePlayers.length) {
-        let text = `### Late Players\n`
+        let text = `**Late Players**\n`
         for (let i = 0; i < roomInfo.latePlayers.length; i++) {
             text += `${i+1}. ${roomInfo.latePlayers[i].name} (${roomInfo.latePlayers[i].mmr} MMR)\n`
         }
-        await message.reply(text)
+        await message.channel.send(text)
     }
 }
 

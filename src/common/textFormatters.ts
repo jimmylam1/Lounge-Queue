@@ -30,22 +30,22 @@ export async function listConfig(guildId: string) {
  * @param players This should be a sorted array
  * @param roomNumber The room number
  */
-export async function listQueueRoom(players: QueuePlayer[], roomNumber: number) {
-    let text = `**Room ${roomNumber}**\n`
+export async function listQueueRoom(players: QueuePlayer[], roomNumber: number, threadChannelId: string) {
+    let text = `**Room ${roomNumber}** -- <#${threadChannelId}>\n`
     for (let i = 0; i < players.length; i++) {
         text += `${i+1}. ${players[i].name} (${players[i].mmr} MMR)\n`
     }
     return text
 }
 
-export function formatTeams(teams: QueuePlayer[][]) {
-    function sortTeamsByMmr() {
-        let arr = teams.map((team, idx) => ({idx, teamMmr: findTeamMmr(team)}))
-        arr.sort((a, b) => b.teamMmr - a.teamMmr)
-        return arr.map(i => teams[i.idx])
-    }
+function sortTeamsByMmr(teams: QueuePlayer[][]) {
+    let arr = teams.map((team, idx) => ({idx, teamMmr: findTeamMmr(team)}))
+    arr.sort((a, b) => b.teamMmr - a.teamMmr)
+    return arr.map(i => teams[i.idx])
+}
 
-    const sortedTeams = sortTeamsByMmr()
+export function formatTeams(teams: QueuePlayer[][]) {
+    const sortedTeams = sortTeamsByMmr(teams)
     const roomMmr = findRoomMmr(sortedTeams)
     let text = `**Room MMR: ${roomMmr}**\n`
     for (let i = 0; i < sortedTeams.length; i++) {
@@ -60,12 +60,13 @@ export function formatTeams(teams: QueuePlayer[][]) {
 }
 
 export function getScoreboard(teams: QueuePlayer[][]) {
+    const sortedTeams = sortTeamsByMmr(teams)
     let text = ''
-    const isFFA = teams[0].length === 1
-    for (let i = 0; i < teams.length; i++) {
+    const isFFA = sortedTeams[0].length === 1
+    for (let i = 0; i < sortedTeams.length; i++) {
         if (!isFFA)
             text += `${String.fromCharCode(65+i)}\n`
-        for (let player of teams[i]) {
+        for (let player of sortedTeams[i]) {
             text += `${player.name} 0\n`
         }
     }
