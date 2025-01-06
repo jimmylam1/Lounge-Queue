@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 import { currentFullRoomsCount, playersNeededForFullRooms, findRoomMmr, findTeamMmr } from "../src/common/util";
-import { QueuePlayer } from '../src/types/player';
+import { getQueuePlayers } from './util';
 
 test('Test currentFullRoomsCount()', () => {
     expect(currentFullRoomsCount(0, 8)).toEqual(0)
@@ -24,24 +24,11 @@ test('Test playersNeededForFullRooms()', () => {
     expect(playersNeededForFullRooms(17, 8)).toEqual(7)
 })
 
-function getPlayers(count: number) {
-    const players: QueuePlayer[] = []
-    for (let i = 0; i < count; i++) {
-        players.push({
-            id: i,
-            name: `Player ${i}`,
-            mmr: i*2,
-            discordId: i.toString(),
-        })
-    }
-    return players
-}
-
 test('Test roomMmr()', () => {
-    const teamFfa = getPlayers(8).map(i => [i])
+    const teamFfa = getQueuePlayers(8).map(i => [i])
     expect(findRoomMmr(teamFfa)).toEqual(7)
 
-    const p = getPlayers(8)
+    const p = getQueuePlayers(8)
     const team2v2 = [[p[0], p[1]], [p[2], p[3]], [p[4], p[5]], [p[6], p[7]]]
     expect(findRoomMmr(team2v2)).toEqual(7)
 
@@ -50,7 +37,7 @@ test('Test roomMmr()', () => {
 })
 
 test('Test teamMmr()', () => {
-    const p = getPlayers(8)
+    const p = getQueuePlayers(8)
     expect(findTeamMmr([p[0], p[1]])).toEqual(1)
     expect(findTeamMmr([p[2], p[3]])).toEqual(5)
     expect(findTeamMmr([p[4], p[5]])).toEqual(9)

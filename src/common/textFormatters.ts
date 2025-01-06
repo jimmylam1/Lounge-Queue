@@ -31,7 +31,7 @@ export async function listConfig(guildId: string) {
  * @param roomNumber The room number
  */
 export async function listQueueRoom(players: QueuePlayer[], roomNumber: number) {
-    let text = `### Room ${roomNumber}\n`
+    let text = `**Room ${roomNumber}**\n`
     for (let i = 0; i < players.length; i++) {
         text += `${i+1}. ${players[i].name} (${players[i].mmr} MMR)\n`
     }
@@ -61,8 +61,10 @@ export function formatTeams(teams: QueuePlayer[][]) {
 
 export function getScoreboard(teams: QueuePlayer[][]) {
     let text = ''
+    const isFFA = teams[0].length === 1
     for (let i = 0; i < teams.length; i++) {
-        text += `${String.fromCharCode(65+i)}\n`
+        if (!isFFA)
+            text += `${String.fromCharCode(65+i)}\n`
         for (let player of teams[i]) {
             text += `${player.name} 0\n`
         }
