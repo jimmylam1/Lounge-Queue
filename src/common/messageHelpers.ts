@@ -3,7 +3,7 @@ import { dbConnect } from "./db/connect";
 import { getRooms, list } from "./core";
 import { LoungeQueue, Votes } from "../types/db";
 import { guildConfig } from "./data/guildConfig";
-import { formatTeams, getPollVotes, getScoreboard, listQueueRoom } from "./textFormatters";
+import { formatTeams, getPollVotes, getScoreboard, listQueueRoom, roomFooter } from "./textFormatters";
 import { ThreadAutoArchiveDuration } from "discord-api-types/v10";
 import { sleep } from "./util";
 import { FormatOption } from "../types/guildConfig";
@@ -158,7 +158,7 @@ export async function makeRooms(message: Message) {
         if (roomInfo.queue.format) {
             const teams = guildConfig[channel.guild.id].randomizeTeams(roomInfo.rooms[i], roomInfo.queue.format)
             channelText += `${formatTeams(teams)}\n`
-            channelText += `-# (Use /scoreboard to get the scoreboard)\n`
+            channelText += roomFooter()
             const scoreboard = getScoreboard(teams)
             await dbConnect(async db => {
                 return await db.execute("INSERT INTO rooms (roomChannelId, queue, createdAt, scoreboard) VALUES (?, ?, ?, ?)", [channel.id, roomInfo.queue!.id, Date.now(), scoreboard])
@@ -242,8 +242,9 @@ export async function closePoll(message: Message) {
     const { voteText, winningFormat } = await getPollVotes(message.guild.id, votes, true)
     const players = await getPlayersInRoom(message.channel.id)
     const teams = guildConfig[message.guild.id].randomizeTeams(players, winningFormat)
-    let text = voteText + `\n\n${formatTeams(teams)}\n`
-                + `-# (Use /scoreboard to get the scoreboard)\n`
+    let text = voteText 
+             + `\n\n${formatTeams(teams)}\n`
+             + roomFooter()
     const scoreboard = getScoreboard(teams)
     await dbConnect(async db => {
         return await db.execute("UPDATE rooms SET scoreboard = ? WHERE roomChannelId = ?", [scoreboard, message.channel.id])

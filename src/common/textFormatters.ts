@@ -111,3 +111,8 @@ export async function getPollVotes(guildId: string, votesArray: Votes[], hasEnde
     }
     return {voteText, winningFormat: bestFormat}
 }
+
+export function roomFooter() {
+    let text = `-# Use \`/scoreboard\` to get the scoreboard. Use \`/ping-staff\` to ping Lounge Queue staff.\n`
+    return text
+}
