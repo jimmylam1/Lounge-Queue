@@ -48,36 +48,39 @@ export function findTeamMmr(team: QueuePlayer[]) {
     return Math.round(totalMmr / count)
 }
 
-async function interactionRespond(interaction: CommandInteraction | ButtonInteraction, interactionOptions: string | InteractionEditReplyOptions | InteractionReplyOptions, options?: ReplyOptions) {
-    if (interaction.deferred) 
-        await interaction.editReply(interactionOptions)
-    else
-        await interaction.reply(interactionOptions)
-
-    if (options?.deleteTime && options.deleteTime > 0 && !interaction.ephemeral) {
-        setTimeout(() => {
-            interaction.deleteReply().catch(e => console.error(`interactionRespond() delete failed: ${e}`))
-        }, options.deleteTime)
+/**
+ * Reply to an interaction, whether a slash command or a button press. 
+ */
+export async function reply(interaction: CommandInteraction | ButtonInteraction, interactionOptions: string | InteractionEditReplyOptions | InteractionReplyOptions, options?: ReplyOptions) {
+    try {
+        if (interaction.deferred) 
+            await interaction.editReply(interactionOptions)
+        else
+            await interaction.reply(interactionOptions)
+    
+        if (options?.deleteTime && options.deleteTime > 0 && !interaction.ephemeral) {
+            setTimeout(() => {
+                interaction.deleteReply().catch(e => console.error(`interactionRespond() delete failed: ${e}`))
+            }, options.deleteTime)
+        }
+    }
+    catch(e) {
+        let text = `util.ts reply() failed: ${e}\n`
+        if (interaction instanceof CommandInteraction)
+            text += `Command: ${interaction.commandName}\n`
+        else
+            text += `Button: ${interaction.customId}\n`
+        if (interaction.guild)
+            text += `Guild name: ${interaction.guild.name}`
+        console.error(text)
     }
 }
-export async function slashReply(interaction: CommandInteraction, interactionOptions: string | InteractionEditReplyOptions | InteractionReplyOptions, options?: ReplyOptions) {
-    await interactionRespond(interaction, interactionOptions, options).catch(e => {
-        let text = `slashReply() failed: ${e}\n`
-                 + `Command: ${interaction.commandName}\n`
-        if (interaction.guild)
-            text += `Guild name: ${interaction.guild.name}`
-        console.error(text)
-    })
-}
-export async function editButtonMessage(interaction: ButtonInteraction, interactionOptions: string | InteractionEditReplyOptions | InteractionReplyOptions, options?: ReplyOptions) {
-    await interactionRespond(interaction, interactionOptions, options).catch(e => {
-        let text = `editButtonMessage() failed: ${e}\n`
-        if (interaction.guild)
-            text += `Guild name: ${interaction.guild.name}`
-        console.error(text)
-    })
-}
-export async function replyButton(interaction: ButtonInteraction, interactionOptions: string | InteractionEditReplyOptions | InteractionReplyOptions, options?: ReplyOptions) {
+
+/**
+ * Reply to the pressed button. Use this instead of reply() if you intend on first using deferUpdate(),
+ * like to not send a response by default, but then need to reply back to the user. 
+ */
+export async function replyToButton(interaction: ButtonInteraction, interactionOptions: string | InteractionEditReplyOptions | InteractionReplyOptions, options?: ReplyOptions) {
     try {
         const message = await interaction.followUp(interactionOptions)
         if (options?.deleteTime && options.deleteTime > 0 && !interaction.ephemeral && message instanceof Message) {

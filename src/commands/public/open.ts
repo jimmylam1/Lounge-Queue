@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { ApplicationCommandData, CommandInteraction, Constants, GuildMember } from "discord.js";
 import { slashCommandEvent } from "../../common/discordEvents";
-import { slashReply } from "../../common/util";
+import { reply } from "../../common/util";
 import { fetchLoungeQueueMessageFromLink, updateLoungeQueueMessage } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { openQueue } from "../../common/core";
@@ -30,16 +30,16 @@ async function handleOpen(interaction: CommandInteraction) {
 
     const canManage = await canManageLoungeQueue(interaction.member, interaction.guild!.id)
     if (!canManage)
-        return slashReply(interaction, {content: 'You do not have permission to use this command', ephemeral: true})
+        return reply(interaction, {content: 'You do not have permission to use this command', ephemeral: true})
 
     await interaction.deferReply({ephemeral: true})
     
     const messageLink = interaction.options.getString("message-link")
     const {message, errorMessage} = await fetchLoungeQueueMessageFromLink(interaction, messageLink)
     if (!message)
-        return slashReply(interaction, errorMessage)
+        return reply(interaction, errorMessage)
 
     await openQueue(message.id)
     await updateLoungeQueueMessage(message, true)
-    slashReply(interaction, `Successfully opened the queue`)
+    reply(interaction, `Successfully opened the queue`)
 }

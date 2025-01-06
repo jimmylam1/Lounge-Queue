@@ -1,6 +1,6 @@
 import { ApplicationCommandData, ApplicationCommandOptionChoiceData, AutocompleteInteraction, CommandInteraction, Constants, GuildMember, TextChannel } from "discord.js";
 import { autocompleteEvent, slashCommandEvent } from "../../common/discordEvents";
-import { slashReply } from "../../common/util";
+import { reply } from "../../common/util";
 import { guildConfig } from "../../common/data/guildConfig";
 import { createLoungeQueue } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
@@ -65,12 +65,12 @@ async function handleStart(interaction: CommandInteraction) {
 
     const canManage = await canManageLoungeQueue(interaction.member, interaction.guild!.id)
     if (!canManage)
-        return slashReply(interaction, {content: 'You do not have permission to use this command', ephemeral: true})
+        return reply(interaction, {content: 'You do not have permission to use this command', ephemeral: true})
 
     await interaction.deferReply({ephemeral: true})
 
     if (!(interaction.channel instanceof TextChannel)) {
-        await slashReply(interaction, 'The text channel must be a regular text channel. Make sure it is not a thread channel.')
+        await reply(interaction, 'The text channel must be a regular text channel. Make sure it is not a thread channel.')
         return
     }
 
@@ -81,6 +81,6 @@ async function handleStart(interaction: CommandInteraction) {
     const success = await createLoungeQueue(interaction.guild!.id, interaction.channel, autoClose, format)
         .catch(e => console.error(`start.ts handleStart()`, e))
     if (success)
-        return slashReply(interaction, `Successfully started the lounge queue`)
-    return slashReply(interaction, `Failed to start the lounge queue`)
+        return reply(interaction, `Successfully started the lounge queue`)
+    return reply(interaction, `Failed to start the lounge queue`)
 }

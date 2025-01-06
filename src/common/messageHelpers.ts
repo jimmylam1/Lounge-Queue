@@ -28,16 +28,21 @@ export function queueMessageEmbed(queueList: string, active: boolean, format?: F
 
 export function queueButtons() {
     const joinButton = new MessageButton()
-        .setCustomId(`handleJoinDrop|join`)
+        .setCustomId(`handleQueueButtons|join`)
         .setLabel('Join')
         .setStyle("SUCCESS")
     const dropButton = new MessageButton()
-        .setCustomId(`handleJoinDrop|drop`)
+        .setCustomId(`handleQueueButtons|drop`)
         .setLabel('Drop')
         .setStyle("DANGER")
+    const previewButton = new MessageButton()
+        .setCustomId(`handleQueueButtons|preview`)
+        .setLabel('Preview Rooms')
+        .setStyle("SECONDARY")
     const componentRow = new MessageActionRow()
         .addComponents(joinButton)
         .addComponents(dropButton)
+        .addComponents(previewButton)
 
     return componentRow
 }

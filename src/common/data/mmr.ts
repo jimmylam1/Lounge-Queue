@@ -20,6 +20,7 @@ export async function mmrMktLounge(playerName: string) {
 
     if (lastMktFetched + 60000 < Date.now()) {
         await fetchApi().catch(e => console.error(`mmr.ts mmrMktLounge() fetchApi() failed: ${e}`))
+        lastMktFetched = Date.now()
     }
     return mktCache[playerName] || null
 }

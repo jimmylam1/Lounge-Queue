@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, GuildMember } from "discord.js";
 import { slashCommandEvent } from "../../common/discordEvents";
-import { slashReply } from "../../common/util";
+import { reply } from "../../common/util";
 import { dbConnect } from "../../common/db/connect";
 import { Rooms } from "../../types/db";
 
@@ -22,7 +22,7 @@ async function handleScoreboard(interaction: CommandInteraction) {
     })
 
     if (!res?.scoreboard)
-        await slashReply(interaction, `There is no scoreboard available for this channel`, {deleteTime: 5000})
+        await reply(interaction, `There is no scoreboard available for this channel`, {deleteTime: 5000})
     else 
-        await slashReply(interaction, res.scoreboard)
+        await reply(interaction, res.scoreboard)
 }

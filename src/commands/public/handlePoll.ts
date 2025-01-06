@@ -1,7 +1,7 @@
 import { ButtonInteraction, GuildMember, Message } from "discord.js"
 import { buttonEvent } from "../../common/discordEvents"
 import { dbConnect } from "../../common/db/connect"
-import { editButtonMessage, replyButton } from "../../common/util"
+import { reply, replyToButton } from "../../common/util"
 import { getPollVotes } from "../../common/textFormatters"
 import { closePoll, getPlayersInRoom, pollButtons } from "../../common/messageHelpers"
 import { guildConfig } from "../../common/data/guildConfig"
@@ -10,7 +10,7 @@ import { Votes } from "../../types/db"
 buttonEvent.on('handlePoll', async (interaction) => {
     handlePoll(interaction).catch(e => {
         console.error(`handlePoll.ts handlePoll()`, e)
-        interaction.followUp({content: `Failed to save your vote`, ephemeral: true}).catch(e => console.error(`handlePoll.ts handlePoll() slashReply ${e}`))
+        replyToButton(interaction, {content: `Failed to save your vote`, ephemeral: true}).catch(e => console.error(`handlePoll.ts handlePoll() replyToButton ${e}`))
     })
 })
 
@@ -21,7 +21,7 @@ async function handlePoll(interaction: ButtonInteraction) {
     await interaction.deferUpdate()
 
     if (!await canVote(interaction.user.id, interaction.channel.id)) {
-        await replyButton(interaction, {content: 'You are not part of this lounge queue', ephemeral: true})
+        await replyToButton(interaction, {content: 'You are not part of this lounge queue', ephemeral: true})
         return 
     }
 
@@ -46,7 +46,7 @@ async function handlePoll(interaction: ButtonInteraction) {
     const { voteText } = await getPollVotes(interaction.guild.id, votes, false)
     const buttons = pollButtons(guildConfig[interaction.guild.id].formats)
     if (interaction.message instanceof Message)
-        await editButtonMessage(interaction, {content: voteText, components: [buttons]})
+        await reply(interaction, {content: voteText, components: [buttons]})
 }
 
 const voteCache: {[key: string]: Set<string>} = {}

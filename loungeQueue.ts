@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import { Client } from "discord.js";
 import { autocompleteEvent, buttonEvent, slashCommandEvent } from "./src/common/discordEvents";
 import { guildConfig } from "./src/common/data/guildConfig";
-import { replyButton, slashReply } from "./src/common/util";
+import { replyToButton, reply } from "./src/common/util";
 import './src/managers/publicCommands';
 import initDb from "./src/common/db/init";
 import { runInterval } from "./src/managers/interval";
@@ -26,13 +26,13 @@ client.on('interactionCreate', (interaction) => {
 
     if (interaction.isCommand()) {
         if (!guildConfig[interaction.guild.id]) 
-            return slashReply(interaction, {content: `This server is not set up to use this bot. Contact jimmy5440 for more info.`, ephemeral: true})
+            return reply(interaction, {content: `This server is not set up to use this bot. Contact jimmy5440 for more info.`, ephemeral: true})
         slashCommandEvent.emit(interaction.commandName, interaction)
     }
 
     else if (interaction.isButton()) {
         if (!guildConfig[interaction.guild.id]) 
-            return replyButton(interaction, {content: `This server is not set up to use this bot. Contact jimmy5440 for more info.`, ephemeral: true})
+            return replyToButton(interaction, {content: `This server is not set up to use this bot. Contact jimmy5440 for more info.`, ephemeral: true})
         buttonEvent.emit(interaction.customId.split("|")[0], interaction)
     }
     else if (interaction.isAutocomplete()) {

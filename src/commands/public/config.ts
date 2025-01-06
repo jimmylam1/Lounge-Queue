@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, Constants } from "discord.js";
 import { slashCommandEvent } from "../../common/discordEvents";
-import { slashReply } from "../../common/util";
+import { reply } from "../../common/util";
 import { dbConnect } from "../../common/db/connect";
 import { listConfig } from "../../common/textFormatters";
 
@@ -62,7 +62,7 @@ async function handleList(interaction: CommandInteraction) {
     await interaction.deferReply()
 
     let text = await listConfig(interaction.guild!.id)
-    await slashReply(interaction, text)
+    await reply(interaction, text)
 }
 
 async function handleAddStaff(interaction: CommandInteraction) {
@@ -76,9 +76,9 @@ async function handleAddStaff(interaction: CommandInteraction) {
     }).catch(e => console.error(`config.ts handleAddStaff() ${e}`))
 
     if (res?.changes)
-        await slashReply(interaction, `Successfully added the role ${role}`)
+        await reply(interaction, `Successfully added the role ${role}`)
     else
-        await slashReply(interaction, "Something went wrong adding the role")
+        await reply(interaction, "Something went wrong adding the role")
 }
 
 async function handleRemoveStaff(interaction: CommandInteraction) {
@@ -94,7 +94,7 @@ async function handleRemoveStaff(interaction: CommandInteraction) {
     }).catch(e => console.error(`config.ts handleRemoveStaff() ${e}`))
 
     if (res?.changes)
-        await slashReply(interaction, `Successfully removed the role ${role}`)
+        await reply(interaction, `Successfully removed the role ${role}`)
     else
-        await slashReply(interaction, "Something went wrong removing the role")
+        await reply(interaction, "Something went wrong removing the role")
 }
