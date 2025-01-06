@@ -139,6 +139,8 @@ export async function makeRooms(message: Message) {
         return
     }
 
+    await message.reply(`Creating rooms for this Lounge Queue`)
+
     for (let i = 0; i < roomInfo.rooms.length; i++) {
         const channel = await message.channel.threads.create({
             name: `Room ${i+1}`,
@@ -146,6 +148,10 @@ export async function makeRooms(message: Message) {
             invitable: false,
             autoArchiveDuration: ThreadAutoArchiveDuration.OneHour
         })
+
+        for (let botId of guildConfig[message.guild.id].botAccess) {
+            await channel.members.add(botId).catch(e => console.error(`makeRooms() failed to add bot ${botId} to room ${channel.id} ${e}`))
+        }
 
         const roomText = await listQueueRoom(roomInfo.rooms[i], i+1, channel.id)
         await message.channel.send(roomText)
