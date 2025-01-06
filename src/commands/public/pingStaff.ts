@@ -19,8 +19,6 @@ async function handlePing(interaction: CommandInteraction) {
     if (!(interaction.channel instanceof ThreadChannel))
         return reply(interaction, {content: "This command is only available inside a thread channel", ephemeral: true})
 
-    await interaction.deferReply()
-
     const roles = await dbConnect(async db => {
         return await db.fetchAll<StaffRoles>(`SELECT * FROM staffRoles WHERE guildId = ?`, [interaction.guild!.id])
     }).catch(e => console.error(`pingStaff.ts fetch roles ${e}`)) || []

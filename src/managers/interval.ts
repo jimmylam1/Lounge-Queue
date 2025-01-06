@@ -34,7 +34,7 @@ async function closeAndOpenQueues(client: Client) {
     const now = new Date()
     if (nextCloseOpenHour <= now) {
         nextCloseOpenHour = findNextHour()
-        await openMktLoungeQueue(client).catch(e => console.error(`Failed to create mkt lounge queue ${e}`))
+        // await openMktLoungeQueue(client).catch(e => console.error(`Failed to create mkt lounge queue ${e}`)) // TODO: enable
     }
 }
 
