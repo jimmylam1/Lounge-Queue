@@ -6,16 +6,16 @@ import { listConfig } from "../../common/textFormatters";
 
 export const data: ApplicationCommandData = {
     name: "config",
-    description: "View or edit server configuration. Requires MANAGE_ROLES permission",
+    description: "View or edit server configuration. Requires Manage Roles permission",
     options: [
         {
             name: "list",
-            description: "View server configuration settings. Requires MANAGE_ROLES permission",
+            description: "View server configuration settings. Requires Manage Roles permission",
             type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
         },
         {
             name: "queue-staff",
-            description: "Add or remove Lounge Queue staff roles. Requires MANAGE_ROLES permission",
+            description: "Add or remove Lounge Queue staff roles. Requires Manage Roles permission",
             type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND_GROUP,
             options: [
                 {
@@ -50,6 +50,9 @@ export const data: ApplicationCommandData = {
 }
 
 slashCommandEvent.on(data.name, async (interaction) => {
+    if (!interaction.memberPermissions?.has('MANAGE_ROLES'))
+        return reply(interaction, {content: 'You need to have Manage Roles permission to use this command', ephemeral: true})
+            .catch(e => console.error(`config.ts MANAGE_ROLES reply`, e))
     if (interaction.options.getSubcommand() == "list")
         handleList(interaction).catch(e => console.error(`config.ts handleList()`, e))
     else if (interaction.options.getSubcommand() == "add-role")

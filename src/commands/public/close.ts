@@ -9,7 +9,7 @@ dotenv.config()
 
 export const data: ApplicationCommandData= {
     name: "close",
-    description: "Close an open queue to disallow people from joining or dropping",
+    description: "Close a queue to prevent people from joining or dropping",
     options: [
         {
             name: "message-link",

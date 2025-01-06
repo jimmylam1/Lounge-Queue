@@ -9,7 +9,7 @@ dotenv.config()
 
 export const data: ApplicationCommandData = {
     name: "open",
-    description: "Open a closed queue to allow people to join or drop",
+    description: "Open a queue to allow people to join or drop",
     options: [
         {
             name: "message-link",
