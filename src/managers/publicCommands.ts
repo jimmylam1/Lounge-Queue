@@ -1,3 +1,4 @@
+import { data as cancelData } from '../commands/public/cancel'
 import { data as closeData } from '../commands/public/close'
 import { data as configData } from '../commands/public/config'
 import '../commands/public/handleQueueButtons'
@@ -9,6 +10,7 @@ import { data as scoreboardData } from '../commands/public/scoreboard'
 import { data as startData } from '../commands/public/start'
 
 export const commandData = [
+    cancelData,
     closeData,
     configData,
     makeRoomsData,

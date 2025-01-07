@@ -133,3 +133,4 @@ dist
 *.db
 
 index.js
+deployToServer.sh
