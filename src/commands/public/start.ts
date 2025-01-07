@@ -4,6 +4,7 @@ import { reply } from "../../common/util";
 import { guildConfig } from "../../common/data/guildConfig";
 import { createLoungeQueue } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
+import { isFormatOption } from "../../types/guildConfig";
 
 export const data: ApplicationCommandData = {
     name: "start",
@@ -74,10 +75,12 @@ async function handleStart(interaction: CommandInteraction) {
         return
     }
 
-    const format = interaction.options.getString("format")
+    const _format = interaction.options.getString("format")
     const autoClose = interaction.options.getInteger('auto-close')
+    const format = (_format && isFormatOption(_format)) ? _format : undefined
+    if (!format)
+        return reply(interaction, `Unknown format ${_format}. Valid formats: ${guildConfig[interaction.guild!.id].formats.join(", ")}`)
 
-    // @ts-ignore
     const success = await createLoungeQueue(interaction.guild!.id, interaction.channel, autoClose, format)
         .catch(e => console.error(`start.ts handleStart()`, e))
     if (success)
