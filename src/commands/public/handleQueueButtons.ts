@@ -40,8 +40,11 @@ async function handleJoin(interaction: ButtonInteraction) {
     const res = await addPlayer(player, interaction.message.id)
     if (res.success && interaction.message instanceof Message)
         await updateLoungeQueueMessage(interaction.message, true)
-    else
+    else {
+        if (res.message === 'Unable to find the associated Lounge Queue' && interaction.message instanceof Message)
+            await removeButtonsFromMessage(interaction.message).catch(e => console.error(`handleQueueButtons.ts handleJoin disableButtons ${e}`))
         await replyToButton(interaction, {content: res.message, ephemeral: true})
+    }
 }
 
 async function handleDrop(interaction: ButtonInteraction) {
@@ -53,8 +56,11 @@ async function handleDrop(interaction: ButtonInteraction) {
     const res = await removePlayer(interaction.user.id, interaction.message.id)
     if (res.success && interaction.message instanceof Message)
         await updateLoungeQueueMessage(interaction.message, true)
-    else
+    else {
+        if (res.message === 'Unable to find the associated Lounge Queue' && interaction.message instanceof Message)
+            await removeButtonsFromMessage(interaction.message).catch(e => console.error(`handleQueueButtons.ts handleDrop disableButtons ${e}`))
         await replyToButton(interaction, {content: res.message, ephemeral: true})
+    }
 }
 
 async function handlePreview(interaction: ButtonInteraction) {
@@ -64,6 +70,8 @@ async function handlePreview(interaction: ButtonInteraction) {
     await interaction.deferReply({ephemeral: true})
 
     const roomInfo = await getRooms(interaction.message.id)
+    if (!roomInfo.queue && interaction.message instanceof Message)
+        await removeButtonsFromMessage(interaction.message).catch(e => console.error(`handleQueueButtons.ts handlePreview disableButtons ${e}`))
     let text = ''
     for (let i = 0; i < roomInfo.rooms.length; i++) {
         const room = roomInfo.rooms[i]
@@ -89,4 +97,10 @@ async function handlePreview(interaction: ButtonInteraction) {
     }
 
     await reply(interaction, text)
+}
+
+async function removeButtonsFromMessage(message: Message) {
+    const embed = message.embeds[0]
+    embed.color = null
+    await message.edit({embeds: [embed], components: []})
 }
