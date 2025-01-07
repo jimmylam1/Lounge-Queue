@@ -93,7 +93,7 @@ async function handleRemoveStaff(interaction: CommandInteraction) {
     const guildId = interaction.guild.id
     
     const res = await dbConnect(async db => {
-        return await db.execute(`DELETE FROM staffRoles WHERE roleDiscordId ? AND guildId = ?`, [role?.id, guildId])
+        return await db.execute(`DELETE FROM staffRoles WHERE roleDiscordId = ? AND guildId = ?`, [role?.id, guildId])
     }).catch(e => console.error(`config.ts handleRemoveStaff() ${e}`))
 
     if (res?.changes)
