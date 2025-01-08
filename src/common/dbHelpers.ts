@@ -8,16 +8,15 @@ export async function fetchQueueFromDb(messageId: string) {
     })
 }
 
-export async function getPlayersInRoom(roomChannelId: string) {
+export async function markQueueMadeRooms(messageId: string) {
     return await dbConnect(async db => {
-        return await db.fetchAll<QueuePlayer>("SELECT * FROM players WHERE roomChannelId = ?", [roomChannelId])
+        return await db.execute("UPDATE loungeQueue SET madeRooms = 1 WHERE messageId = ?", [messageId])
     })
 }
 
-export async function roomsHaveBeenCreatedForQueue(queueId: number) {
+export async function getPlayersInRoom(roomChannelId: string) {
     return await dbConnect(async db => {
-        const res = await db.fetchOne<number>("SELECT 1 FROM rooms WHERE queue = ?", [queueId])
-        return !!res
+        return await db.fetchAll<QueuePlayer>("SELECT * FROM players WHERE roomChannelId = ?", [roomChannelId])
     })
 }
 

@@ -4,6 +4,7 @@ import { reply } from "../../common/util";
 import { fetchLoungeQueueMessageFromLink, updateLoungeQueueMessage } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { cancelQueue } from "../../common/core";
+import { fetchQueueFromDb } from "../../common/dbHelpers";
 
 export const data: ApplicationCommandData= {
     name: "cancel",
@@ -39,6 +40,14 @@ async function handleCancel(interaction: CommandInteraction) {
     const {message, errorMessage} = await fetchLoungeQueueMessageFromLink(interaction, messageLink)
     if (!message)
         return reply(interaction, errorMessage)
+
+    const queue = await fetchQueueFromDb(message.id)
+    if (!queue)
+        return await reply(interaction, `There was a problem fetching the queue`)
+    if (queue.cancelled)
+        return await reply(interaction, `The queue has already been cancelled.`)
+    if (queue.madeRooms)
+        return await reply(interaction, `This queue cannot be cancelled because rooms have already been created.`)
 
     await cancelQueue(message.id)
     await updateLoungeQueueMessage(message, false)

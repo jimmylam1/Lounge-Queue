@@ -5,6 +5,7 @@ import { reply } from "../../common/util";
 import { fetchLoungeQueueMessageFromLink, updateLoungeQueueMessage } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { closeQueue } from "../../common/core";
+import { fetchQueueFromDb } from "../../common/dbHelpers";
 dotenv.config()
 
 export const data: ApplicationCommandData= {
@@ -38,6 +39,12 @@ async function handleClose(interaction: CommandInteraction) {
     const {message, errorMessage} = await fetchLoungeQueueMessageFromLink(interaction, messageLink)
     if (!message)
         return reply(interaction, errorMessage)
+
+    const queue = await fetchQueueFromDb(message.id)
+    if (!queue)
+        return await reply(interaction, `There was a problem fetching the queue`)
+    if (!queue.active)
+        return await reply(interaction, `The queue is already closed.`)
 
     await closeQueue(message.id)
     await updateLoungeQueueMessage(message, false)

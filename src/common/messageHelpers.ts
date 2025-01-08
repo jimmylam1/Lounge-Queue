@@ -7,7 +7,7 @@ import { formatTeams, getPollVotes, getScoreboard, listQueueRoom, roomFooter, sc
 import { ThreadAutoArchiveDuration } from "discord-api-types/v10";
 import { FormatOption } from "../types/guildConfig";
 import { QueuePlayer } from "../types/player";
-import { fetchQueueFromDb, getPlayersInRoom } from "./dbHelpers";
+import { fetchQueueFromDb, getPlayersInRoom, markQueueMadeRooms } from "./dbHelpers";
 
 export const blankQueueList = "`Queue List`\n"
                             + "\n"
@@ -130,6 +130,7 @@ export async function makeRooms(message: Message) {
     }
 
     if (roomInfo.rooms.length < guildConfig[message.guild.id].minFullRooms) {
+        await markQueueMadeRooms(message.id)
         await message.reply(`This queue is cancelled because it needs a minimum of ${guildConfig[message.guild.id].minFullRooms} full rooms.`)
         return
     }
@@ -169,6 +170,8 @@ export async function makeRooms(message: Message) {
         await channel.send(channelText)
         if (!roomInfo.queue.format)
             await createPoll(channel, roomInfo.queue)
+
+        await markQueueMadeRooms(message.id)
     }
 
     if (roomInfo.latePlayers.length) {

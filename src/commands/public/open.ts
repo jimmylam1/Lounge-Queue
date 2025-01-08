@@ -5,7 +5,7 @@ import { reply } from "../../common/util";
 import { fetchLoungeQueueMessageFromLink, updateLoungeQueueMessage } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { openQueue } from "../../common/core";
-import { fetchQueueFromDb, getActiveQueuesInChannel, roomsHaveBeenCreatedForQueue } from "../../common/dbHelpers";
+import { fetchQueueFromDb, getActiveQueuesInChannel } from "../../common/dbHelpers";
 dotenv.config()
 
 export const data: ApplicationCommandData = {
@@ -45,8 +45,9 @@ async function handleOpen(interaction: CommandInteraction) {
         return await reply(interaction, `There was a problem fetching the queue`)
     if (queue.cancelled)
         return await reply(interaction, `This queue cannot be opened because it has been cancelled.`)
-    if (await roomsHaveBeenCreatedForQueue(queue.id))
+    if (queue.madeRooms)
         return await reply(interaction, `This queue cannot be opened because rooms have already been created.`)
+    
     const activeQueues = await getActiveQueuesInChannel(interaction.channel.id)
     if (activeQueues.length > 0) {
         const q = activeQueues[0]
