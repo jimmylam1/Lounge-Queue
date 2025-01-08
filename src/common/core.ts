@@ -92,6 +92,7 @@ export async function getRooms(messageId: string): Promise<RoomInfo> {
             var config = guildConfig[queue.guildId]
         }
         catch(e) {
+            console.error(`core.ts getRooms() failed ${e}`)
             return {rooms: [], latePlayers: [], queue: null}
         }
 
@@ -126,6 +127,14 @@ export async function openQueue(messageId: string) {
 export async function closeQueue(messageId: string) {
     const success = await dbConnect(async db => {
         const res = await db.execute("UPDATE loungeQueue SET active = 0 WHERE messageId = ?", [messageId])
+        return res.changes === 1
+    })
+    return success
+}
+
+export async function cancelQueue(messageId: string) {
+    const success = await dbConnect(async db => {
+        const res = await db.execute("UPDATE loungeQueue SET active = 0, cancelled = 1 WHERE messageId = ?", [messageId])
         return res.changes === 1
     })
     return success

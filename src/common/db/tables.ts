@@ -13,6 +13,7 @@ const loungeQueue = `CREATE TABLE IF NOT EXISTS loungeQueue(
     startTime INTEGER NOT NULL,
     endTime INTEGER,
     active BOOLEAN NOT NULL,
+    cancelled BOOLEAN,
     format TEXT
 )`
 

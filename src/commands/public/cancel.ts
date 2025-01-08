@@ -1,9 +1,9 @@
 import { ApplicationCommandData, CommandInteraction, Constants, GuildMember, TextChannel } from "discord.js";
 import { slashCommandEvent } from "../../common/discordEvents";
 import { reply } from "../../common/util";
-import { fetchLoungeQueueMessageFromLink, makeRooms, updateLoungeQueueMessage } from "../../common/messageHelpers";
+import { fetchLoungeQueueMessageFromLink, updateLoungeQueueMessage } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
-import { closeQueue } from "../../common/core";
+import { cancelQueue } from "../../common/core";
 
 export const data: ApplicationCommandData= {
     name: "cancel",
@@ -40,7 +40,7 @@ async function handleCancel(interaction: CommandInteraction) {
     if (!message)
         return reply(interaction, errorMessage)
 
-    await closeQueue(message.id)
+    await cancelQueue(message.id)
     await updateLoungeQueueMessage(message, false)
 
     if (!message.guild) {

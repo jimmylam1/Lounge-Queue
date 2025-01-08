@@ -22,6 +22,7 @@ export type LoungeQueue = {
     startTime: number;
     endTime: number | null; // if number, the queue will automatically close once the time is up
     active: boolean;
+    cancelled: boolean | null;
     format: FormatOption | null; // null requires poll when queue closes
 }
 
