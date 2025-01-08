@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, Constants, GuildMember, TextChannel } from "discord.js";
 import { slashCommandEvent } from "../../common/discordEvents";
 import { reply } from "../../common/util";
-import { fetchLoungeQueueMessageFromLink, makeRooms, updateLoungeQueueMessage } from "../../common/messageHelpers";
+import { fetchLoungeQueueMessageFromLink, fetchQueueFromDb, makeRooms, roomsHaveBeenCreatedForQueue, updateLoungeQueueMessage } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { closeQueue } from "../../common/core";
 
@@ -39,6 +39,14 @@ async function handleMakeRooms(interaction: CommandInteraction) {
     const {message, errorMessage} = await fetchLoungeQueueMessageFromLink(interaction, messageLink)
     if (!message)
         return reply(interaction, errorMessage)
+
+    const queue = await fetchQueueFromDb(message.id)
+    if (!queue)
+        return await reply(interaction, `There was a problem fetching the queue`)
+    if (queue.cancelled)
+        return await reply(interaction, `Rooms cannot be made because the queue has been cancelled.`)
+    if (await roomsHaveBeenCreatedForQueue(queue.id))
+        return await reply(interaction, `Rooms cannot be made bacause rooms have already been created.`)
 
     await closeQueue(message.id)
     await updateLoungeQueueMessage(message, false)

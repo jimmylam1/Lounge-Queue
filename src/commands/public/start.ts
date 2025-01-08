@@ -1,8 +1,8 @@
-import { ApplicationCommandData, ApplicationCommandOptionChoiceData, AutocompleteInteraction, CommandInteraction, Constants, GuildMember, TextChannel } from "discord.js";
+import { ApplicationCommandData, ApplicationCommandOptionChoiceData, AutocompleteInteraction, CommandInteraction, Constants, GuildMember, MessageActionRow, MessageButton, TextChannel } from "discord.js";
 import { autocompleteEvent, slashCommandEvent } from "../../common/discordEvents";
 import { reply } from "../../common/util";
 import { guildConfig } from "../../common/data/guildConfig";
-import { createLoungeQueue } from "../../common/messageHelpers";
+import { createLoungeQueue, getActiveQueuesInChannel } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { isFormatOption } from "../../types/guildConfig";
 
@@ -78,8 +78,15 @@ async function handleStart(interaction: CommandInteraction) {
     const _format = interaction.options.getString("format")
     const autoClose = interaction.options.getInteger('auto-close')
     const format = (_format && isFormatOption(_format)) ? _format : undefined
-    if (!format)
+    if (_format && !format)
         return reply(interaction, `Unknown format ${_format}. Valid formats: ${guildConfig[interaction.guild!.id].formats.join(", ")}`)
+
+    const activeQueues = await getActiveQueuesInChannel(interaction.channel.id)
+    if (activeQueues.length > 0) {
+        const q = activeQueues[0]
+        const link = `https://discord.com/channels/${q.guildId}/${q.channelId}/${q.messageId}`
+        return reply(interaction, `⚠️ There is already an active queue in this channel (${link}). You will need to either close, cancel, or make rooms first`)
+    }
 
     const success = await createLoungeQueue(interaction.guild!.id, interaction.channel, autoClose, format)
         .catch(e => console.error(`start.ts handleStart()`, e))

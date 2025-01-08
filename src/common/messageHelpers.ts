@@ -51,7 +51,7 @@ export function queueButtons() {
  * Create a new lounge queue message. Returns true if successful
  */
 export async function createLoungeQueue(guildId: string, channel: TextChannel, autoClose: number | null, format?: FormatOption) {
-    const message = await channel.send({embeds: [{description: 'Initializing...'}]})
+    const message = await channel.send({embeds: [{description: 'Initializing Lounge Queue...'}]})
 
     const query = `INSERT INTO loungeQueue 
         (guildId, channelId, messageId, startTime, endTime, active, format)
@@ -79,15 +79,18 @@ export async function createLoungeQueue(guildId: string, channel: TextChannel, a
     return false
 }
 
+export async function fetchQueueFromDb(messageId: string) {
+    return await dbConnect(async db => {
+        return await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = ?", [messageId])
+    })
+}
+
 export async function updateLoungeQueueMessage(message: Message, active: boolean) {
     const queueList = await list(message.id)
     if (!queueList.success)
         return
 
-    const queue = await dbConnect(async db => {
-        return await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = ?", [message.id])
-    })
-
+    const queue = await fetchQueueFromDb(message.id)
     const embed = queueMessageEmbed(queueList.message, active, queue?.format || undefined)
     const buttons = queueButtons()
     const components = active ? [buttons] : []
@@ -95,9 +98,7 @@ export async function updateLoungeQueueMessage(message: Message, active: boolean
 }
 
 export async function fetchLoungeQueueMessage(client: Client, messageId: string) {
-    const res = await dbConnect(async db => {
-        return await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = ?", [messageId])
-    })
+    const res = await fetchQueueFromDb(messageId)
     if (!res)
         return null
 
@@ -117,7 +118,7 @@ export async function fetchLoungeQueueMessageFromLink(interaction: CommandIntera
 
     const message = await fetchLoungeQueueMessage(interaction.client, messageId)
     if (!message || message.author.id != process.env.CLIENT_ID)
-        return {message: null, errorMessage: `Failed to fetch the queue. This can happen if the message link is not from the bot or if it has been over 24 hours since the queue was initialized.`}
+        return {message: null, errorMessage: `Failed to fetch the queue. This can happen if the message link is not from the bot or if it has been over 24 hours since the queue was created.`}
     return {message, errorMessage: ''}
 }
 
@@ -220,6 +221,19 @@ export function pollButtons(formats: FormatOption[]) {
 export async function getPlayersInRoom(roomChannelId: string) {
     return await dbConnect(async db => {
         return await db.fetchAll<QueuePlayer>("SELECT * FROM players WHERE roomChannelId = ?", [roomChannelId])
+    })
+}
+
+export async function roomsHaveBeenCreatedForQueue(queueId: number) {
+    return await dbConnect(async db => {
+        const res = await db.fetchOne<number>("SELECT 1 FROM rooms WHERE queue = ?", [queueId])
+        return !!res
+    })
+}
+
+export async function getActiveQueuesInChannel(channelId: string) {
+    return await dbConnect(async db => {
+        return await db.fetchAll<LoungeQueue>("SELECT * FROM loungeQueue WHERE channelId = ? AND active = 1", [channelId])
     })
 }
 
