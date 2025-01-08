@@ -5,7 +5,7 @@ import { reply } from "../../common/util";
 import { fetchLoungeQueueMessageFromLink, updateLoungeQueueMessage } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { openQueue } from "../../common/core";
-import { fetchQueueFromDb, roomsHaveBeenCreatedForQueue } from "../../common/dbHelpers";
+import { fetchQueueFromDb, getActiveQueuesInChannel, roomsHaveBeenCreatedForQueue } from "../../common/dbHelpers";
 dotenv.config()
 
 export const data: ApplicationCommandData = {
@@ -47,6 +47,12 @@ async function handleOpen(interaction: CommandInteraction) {
         return await reply(interaction, `This queue cannot be opened because it has been cancelled.`)
     if (await roomsHaveBeenCreatedForQueue(queue.id))
         return await reply(interaction, `This queue cannot be opened because rooms have already been created.`)
+    const activeQueues = await getActiveQueuesInChannel(interaction.channel.id)
+    if (activeQueues.length > 0) {
+        const q = activeQueues[0]
+        const link = `https://discord.com/channels/${q.guildId}/${q.channelId}/${q.messageId}`
+        return reply(interaction, `⚠️ There is already an active queue in this channel (${link}). You will need to either close, cancel, or make rooms first`)
+    }
 
     await openQueue(message.id)
     await updateLoungeQueueMessage(message, true)

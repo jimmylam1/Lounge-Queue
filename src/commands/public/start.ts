@@ -1,10 +1,9 @@
 import { ApplicationCommandData, ApplicationCommandOptionChoiceData, AutocompleteInteraction, CommandInteraction, Constants, GuildMember, MessageActionRow, MessageButton, TextChannel } from "discord.js";
 import { autocompleteEvent, slashCommandEvent } from "../../common/discordEvents";
-import { reply } from "../../common/util";
+import { isFormatOption, reply } from "../../common/util";
 import { guildConfig } from "../../common/data/guildConfig";
 import { createLoungeQueue } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
-import { isFormatOption } from "../../types/guildConfig";
 import { getActiveQueuesInChannel } from "../../common/dbHelpers";
 
 export const data: ApplicationCommandData = {

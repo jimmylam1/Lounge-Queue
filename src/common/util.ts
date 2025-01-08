@@ -2,6 +2,7 @@ import { ButtonInteraction, CommandInteraction, InteractionEditReplyOptions, Int
 import { ReplyOptions } from "../types/util";
 import { promisify } from "util";
 import { QueuePlayer } from "../types/player";
+import { FormatOption } from "../types/guildConfig";
 
 export const sleep = promisify(setTimeout);
 
@@ -13,6 +14,11 @@ export function playersNeededForFullRooms(playerCount: number, roomSize: number)
     if (playerCount > 0 && playerCount % roomSize === 0)
         return 0
     return roomSize - (playerCount % roomSize);
+}
+
+export function isFormatOption(format: string): format is FormatOption {
+    const formats = ['FFA', '2v2', '3v3', '4v4', '5v5', '6v6']
+    return formats.includes(format)
 }
 
 /**

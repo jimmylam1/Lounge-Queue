@@ -73,6 +73,14 @@ export function getScoreboard(teams: QueuePlayer[][]) {
     return text
 }
 
+/**
+ * Returns the scoreboard command as `!scoreboard # player1, player2, ...`
+ */
+export function scoreboardCommand(teams: QueuePlayer[][]) {
+    const sortedTeams = sortTeamsByMmr(teams)
+    return `!scoreboard ${sortedTeams.length} ${sortedTeams.flat().map(i => i.name).join(", ")}`
+}
+
 export async function getPollVotes(guildId: string, votesArray: Votes[], hasEnded: boolean): Promise<PollVotes> {
     function maxVoteCount(votes: {[key: string]: any[]}) {
         let count = 0
