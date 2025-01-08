@@ -5,9 +5,9 @@ import { LoungeQueue, Votes } from "../types/db";
 import { guildConfig } from "./data/guildConfig";
 import { formatTeams, getPollVotes, getScoreboard, listQueueRoom, roomFooter } from "./textFormatters";
 import { ThreadAutoArchiveDuration } from "discord-api-types/v10";
-import { sleep } from "./util";
 import { FormatOption } from "../types/guildConfig";
 import { QueuePlayer } from "../types/player";
+import { fetchQueueFromDb, getPlayersInRoom } from "./dbHelpers";
 
 export const blankQueueList = "`Queue List`\n"
                             + "\n"
@@ -77,12 +77,6 @@ export async function createLoungeQueue(guildId: string, channel: TextChannel, a
         return true
     }
     return false
-}
-
-export async function fetchQueueFromDb(messageId: string) {
-    return await dbConnect(async db => {
-        return await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE messageId = ?", [messageId])
-    })
 }
 
 export async function updateLoungeQueueMessage(message: Message, active: boolean) {
@@ -216,25 +210,6 @@ export function pollButtons(formats: FormatOption[]) {
     }
 
     return componentRow
-}
-
-export async function getPlayersInRoom(roomChannelId: string) {
-    return await dbConnect(async db => {
-        return await db.fetchAll<QueuePlayer>("SELECT * FROM players WHERE roomChannelId = ?", [roomChannelId])
-    })
-}
-
-export async function roomsHaveBeenCreatedForQueue(queueId: number) {
-    return await dbConnect(async db => {
-        const res = await db.fetchOne<number>("SELECT 1 FROM rooms WHERE queue = ?", [queueId])
-        return !!res
-    })
-}
-
-export async function getActiveQueuesInChannel(channelId: string) {
-    return await dbConnect(async db => {
-        return await db.fetchAll<LoungeQueue>("SELECT * FROM loungeQueue WHERE channelId = ? AND active = 1", [channelId])
-    })
 }
 
 async function createPoll(channel: ThreadChannel, queue: LoungeQueue) {

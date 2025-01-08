@@ -2,9 +2,10 @@ import { ApplicationCommandData, ApplicationCommandOptionChoiceData, Autocomplet
 import { autocompleteEvent, slashCommandEvent } from "../../common/discordEvents";
 import { reply } from "../../common/util";
 import { guildConfig } from "../../common/data/guildConfig";
-import { createLoungeQueue, getActiveQueuesInChannel } from "../../common/messageHelpers";
+import { createLoungeQueue } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { isFormatOption } from "../../types/guildConfig";
+import { getActiveQueuesInChannel } from "../../common/dbHelpers";
 
 export const data: ApplicationCommandData = {
     name: "start",

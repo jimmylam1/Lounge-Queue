@@ -2,9 +2,10 @@ import dotenv from "dotenv";
 import { ApplicationCommandData, CommandInteraction, Constants, GuildMember } from "discord.js";
 import { slashCommandEvent } from "../../common/discordEvents";
 import { reply } from "../../common/util";
-import { fetchLoungeQueueMessageFromLink, fetchQueueFromDb, roomsHaveBeenCreatedForQueue, updateLoungeQueueMessage } from "../../common/messageHelpers";
+import { fetchLoungeQueueMessageFromLink, updateLoungeQueueMessage } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { openQueue } from "../../common/core";
+import { fetchQueueFromDb, roomsHaveBeenCreatedForQueue } from "../../common/dbHelpers";
 dotenv.config()
 
 export const data: ApplicationCommandData = {

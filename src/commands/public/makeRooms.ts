@@ -1,9 +1,10 @@
 import { ApplicationCommandData, CommandInteraction, Constants, GuildMember, TextChannel } from "discord.js";
 import { slashCommandEvent } from "../../common/discordEvents";
 import { reply } from "../../common/util";
-import { fetchLoungeQueueMessageFromLink, fetchQueueFromDb, makeRooms, roomsHaveBeenCreatedForQueue, updateLoungeQueueMessage } from "../../common/messageHelpers";
+import { fetchLoungeQueueMessageFromLink, makeRooms, updateLoungeQueueMessage } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { closeQueue } from "../../common/core";
+import { fetchQueueFromDb, roomsHaveBeenCreatedForQueue } from "../../common/dbHelpers";
 
 export const data: ApplicationCommandData= {
     name: "make-rooms",

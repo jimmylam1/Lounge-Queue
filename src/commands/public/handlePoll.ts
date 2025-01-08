@@ -3,9 +3,10 @@ import { buttonEvent } from "../../common/discordEvents"
 import { dbConnect } from "../../common/db/connect"
 import { reply, replyToButton } from "../../common/util"
 import { getPollVotes } from "../../common/textFormatters"
-import { closePoll, getPlayersInRoom, pollButtons } from "../../common/messageHelpers"
+import { closePoll, pollButtons } from "../../common/messageHelpers"
 import { guildConfig } from "../../common/data/guildConfig"
 import { Votes } from "../../types/db"
+import { getPlayersInRoom } from "../../common/dbHelpers"
 
 buttonEvent.on('handlePoll', async (interaction) => {
     handlePoll(interaction).catch(e => {
