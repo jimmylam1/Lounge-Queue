@@ -55,6 +55,23 @@ export function findTeamMmr(team: QueuePlayer[]) {
 }
 
 /**
+ * Finds the next hour. For example, if the current time is 9:41:31, this will return 10:00:00
+ */
+export function findNextHour() {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, 0, 0);
+}
+
+/**
+ * Finds the next 10 seconds. For example, if the current time is 9:12:31, this will return 9:12:40
+ */
+export function findNext10Seconds() {
+    const now = new Date();
+    const count = Math.floor(now.getSeconds() / 10)
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), 10*(count+1));
+}
+
+/**
  * Reply to an interaction, whether a slash command or a button press. 
  */
 export async function reply(interaction: CommandInteraction | ButtonInteraction, interactionOptions: string | InteractionEditReplyOptions | InteractionReplyOptions, options?: ReplyOptions) {

@@ -1,50 +1,50 @@
 import { Client } from "discord.js";
 import { closePolls } from "../interval/closePolls";
 import { closeQueues } from "../interval/closeQueues";
-import { openMktLoungeQueue } from "../interval/openMktLoungeQueue";
 import { deleteOldRowsAndRooms } from "../interval/deleteRowsAndRooms";
+import { openExampleLoungeQueue } from "../interval/exampleOpenLoungeQueue";
+import { findNext10Seconds, findNextHour } from "../common/util";
 
 export function runInterval(client: Client) {
-    // check polls every 10 seconds
-    setInterval(() => {
-        closePolls(client).catch(e => console.error(`interval.ts closePolls() failed ${e}`))
-    }, 10000);
-
-    // check to close and open queues every minute, on the minute
+    // run every 10 seconds, including on the minute
     setTimeout(() => {
-        closeAndOpenQueues(client).catch(e => console.error(`interval.ts closeAndOpenQueues() failed ${e}`))
-        setInterval( () => {
-            closeAndOpenQueues(client).catch(e => console.error(`interval.ts closeAndOpenQueues() failed ${e}`))
-        }, 60000);
-    }, delayUntilMinute());
+        mainIntervalHandler(client)
+        setInterval(() => {
+            mainIntervalHandler(client)
+        }, 10000);  
+    }, findNext10Seconds().getTime() - Date.now());
 
-    // check to delete old db rows and rooms once an hour, doesn't have to be precisely on the hour
-    setInterval(() => {
+    // check to delete old db rows and rooms once an hour
+    setTimeout(() => {
         deleteOldRowsAndRooms(client).catch(e => console.error(`interval.ts deleteOldRowsAndRooms() failed ${e}`))
-    }, 3600000);
+        setInterval(() => {
+            deleteOldRowsAndRooms(client).catch(e => console.error(`interval.ts deleteOldRowsAndRooms() failed ${e}`))
+        }, 3600000);
+    }, findNextHour().getTime() - Date.now());
 }
 
-var nextCloseOpenHour = findNextHour()
+// need to check if function is running since they may take longer than the 10 second interval
+var pollsIsRunning = false
+var queuesIsRunning = false
+function mainIntervalHandler(client: Client) {
+    // check for polls that should close
+    if (!pollsIsRunning) {
+        pollsIsRunning = true
+        closePolls(client)
+            .catch(e => console.error(`interval.ts closePolls() failed ${e}`))
+            .finally(() => pollsIsRunning = false)
+    }
+    // check for queues that should close as well as any server open intervals
+    if (!queuesIsRunning) {
+        closeAndOpenQueues(client)
+            .catch(e => console.error(`interval.ts closeAndOpenQueues() failed ${e}`))
+            .finally(() => queuesIsRunning = false)
+    }
+}
+
 async function closeAndOpenQueues(client: Client) {
     await closeQueues(client)
     
     // custom server lounge queue intervals should be added here
-
-    // open mkt queues every hour
-    const now = new Date()
-    if (nextCloseOpenHour <= now) {
-        nextCloseOpenHour = findNextHour()
-        // await openMktLoungeQueue(client).catch(e => console.error(`Failed to create mkt lounge queue ${e}`)) // TODO: enable
-    }
-}
-
-function delayUntilMinute() {
-    const now = new Date()
-    const nextMinute = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 1, 0);
-    return nextMinute.getTime() - now.getTime()
-}
-
-function findNextHour() {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, 0, 0);
+    // await openExampleLoungeQueue(client)
 }

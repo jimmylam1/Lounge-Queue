@@ -50,7 +50,7 @@ export function queueButtons() {
 /**
  * Create a new lounge queue message. Returns true if successful
  */
-export async function createLoungeQueue(guildId: string, channel: TextChannel, autoClose: number | null, format?: FormatOption) {
+export async function createLoungeQueue(guildId: string, channel: TextChannel, autoCloseAfter: number | null, format?: FormatOption, endTime?: number) {
     const message = await channel.send({embeds: [{description: 'Initializing Lounge Queue...'}]})
 
     const query = `INSERT INTO loungeQueue 
@@ -62,7 +62,7 @@ export async function createLoungeQueue(guildId: string, channel: TextChannel, a
         channel.id,
         message.id,
         now,
-        autoClose ? now + 60000*autoClose : null,
+        endTime || (autoCloseAfter ? now + 60000*autoCloseAfter : null),
         true,
         format || null
     ]
@@ -170,8 +170,6 @@ export async function makeRooms(message: Message) {
         await channel.send(channelText)
         if (!roomInfo.queue.format)
             await createPoll(channel, roomInfo.queue)
-
-        await markQueueMadeRooms(message.id)
     }
 
     if (roomInfo.latePlayers.length) {
@@ -181,6 +179,7 @@ export async function makeRooms(message: Message) {
         }
         await message.channel.send(text)
     }
+    await markQueueMadeRooms(message.id)
 }
 
 async function setPlayerRooms(players: QueuePlayer[], queueId: number, roomChannelId: string) {

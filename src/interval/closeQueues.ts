@@ -30,6 +30,6 @@ export async function closeQueues(client: Client) {
 async function findQueuesToClose() {
     const now = Date.now()
     return await dbConnect(async db => {
-        return await db.fetchAll<LoungeQueue>("SELECT * FROM loungeQueue WHERE endTime <= ? AND active = 1", [now + 10000]) // +10 seconds to better handle potential time drifts
+        return await db.fetchAll<LoungeQueue>("SELECT * FROM loungeQueue WHERE endTime <= ? AND active = 1", [now])
     })
 }
