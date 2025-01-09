@@ -170,7 +170,7 @@ export async function makeRooms(message: Message) {
         if (roomInfo.queue.format) {
             const teams = guildConfig[channel.guild.id].randomizeTeams(roomInfo.rooms[i], roomInfo.queue.format)
             channelText += `${formatTeams(teams)}\n`
-                        + `Table: \`${scoreboardCommand(teams)}\`\n`
+                        + `Table: \`${scoreboardCommand(teams)}\`\n\n`
                         + roomFooter()
             const scoreboard = getScoreboard(teams)
             await dbConnect(async db => {
@@ -252,7 +252,7 @@ export async function closePoll(message: Message) {
     const teams = guildConfig[message.guild.id].randomizeTeams(players, winningFormat)
     let text = voteText 
              + `\n\n${formatTeams(teams)}\n`
-             + `Table: \`${scoreboardCommand(teams)}\`\n`
+             + `Table: \`${scoreboardCommand(teams)}\`\n\n`
              + roomFooter()
     const scoreboard = getScoreboard(teams)
     await dbConnect(async db => {
