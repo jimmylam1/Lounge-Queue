@@ -5,6 +5,7 @@ import { QueuePlayer } from "../types/player";
 import { FormatOption } from "../types/guildConfig";
 import { findRoomMmr, findTeamMmr } from "./util";
 import { PollVotes } from "../types/loungeQueue";
+import { getLatestQueueInChannel } from "./dbHelpers";
 
 export async function listConfig(guildId: string) {
     let res = await dbConnect(async db => {
@@ -123,4 +124,11 @@ export async function getPollVotes(guildId: string, votesArray: Votes[], hasEnde
 export function roomFooter() {
     let text = `-# Use \`/scoreboard\` to get the scoreboard. Use \`/ping-staff\` to ping Lounge Queue staff.\n`
     return text
+}
+
+export async function getLatestQueueMessageLink(channelId: string) {
+    const queue = await getLatestQueueInChannel(channelId)
+    if (!queue)
+        return null
+    return `https://discord.com/channels/${queue.guildId}/${queue.channelId}/${queue.messageId}`
 }

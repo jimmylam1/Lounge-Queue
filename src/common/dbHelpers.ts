@@ -25,3 +25,9 @@ export async function getActiveQueuesInChannel(channelId: string) {
         return await db.fetchAll<LoungeQueue>("SELECT * FROM loungeQueue WHERE channelId = ? AND active = 1", [channelId])
     })
 }
+
+export async function getLatestQueueInChannel(channelId: string) {
+    return await dbConnect(async db => {
+        return await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE id = (SELECT MAX(id) FROM loungeQueue WHERE channelId = ?)", [channelId])
+    })
+}

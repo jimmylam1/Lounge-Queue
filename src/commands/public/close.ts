@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import { ApplicationCommandData, CommandInteraction, Constants, GuildMember } from "discord.js";
 import { slashCommandEvent } from "../../common/discordEvents";
 import { reply } from "../../common/util";
-import { fetchLoungeQueueMessageFromLink, updateLoungeQueueMessage } from "../../common/messageHelpers";
+import { checkQueueMessageLink, fetchLoungeQueueMessageFromLink, updateLoungeQueueMessage } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { closeQueue } from "../../common/core";
 import { fetchQueueFromDb } from "../../common/dbHelpers";
@@ -10,13 +10,12 @@ dotenv.config()
 
 export const data: ApplicationCommandData= {
     name: "close",
-    description: "Close a queue to prevent people from joining or dropping",
+    description: "Close the latest queue in this channel",
     options: [
         {
             name: "message-link",
-            description: "The message link to the queue",
+            description: "The message link to the queue, if not the latest",
             type: Constants.ApplicationCommandOptionTypes.STRING,
-            required: true
         },
     ]
 }
@@ -35,7 +34,9 @@ async function handleClose(interaction: CommandInteraction) {
 
     await interaction.deferReply({ephemeral: true})
     
-    const messageLink = interaction.options.getString("message-link")
+    const messageLink = await checkQueueMessageLink(interaction)
+    if (messageLink === null)
+        return reply(interaction, `Unable to automatically fetch the latest queue in this channel. You will need to include the \`message-link\` option with this command.`)
     const {message, errorMessage} = await fetchLoungeQueueMessageFromLink(interaction, messageLink)
     if (!message)
         return reply(interaction, errorMessage)

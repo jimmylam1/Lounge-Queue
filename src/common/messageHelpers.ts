@@ -3,7 +3,7 @@ import { dbConnect } from "./db/connect";
 import { getRooms, list } from "./core";
 import { LoungeQueue, Votes } from "../types/db";
 import { guildConfig } from "./data/guildConfig";
-import { formatTeams, getPollVotes, getScoreboard, listQueueRoom, roomFooter, scoreboardCommand } from "./textFormatters";
+import { formatTeams, getLatestQueueMessageLink, getPollVotes, getScoreboard, listQueueRoom, roomFooter, scoreboardCommand } from "./textFormatters";
 import { ThreadAutoArchiveDuration } from "discord-api-types/v10";
 import { FormatOption } from "../types/guildConfig";
 import { QueuePlayer } from "../types/player";
@@ -114,6 +114,16 @@ export async function fetchLoungeQueueMessageFromLink(interaction: CommandIntera
     if (!message || message.author.id != process.env.CLIENT_ID)
         return {message: null, errorMessage: `Failed to fetch the queue. This can happen if the message link is not from the bot or if it has been over 24 hours since the queue was created.`}
     return {message, errorMessage: ''}
+}
+
+export async function checkQueueMessageLink(interaction: CommandInteraction) {
+    let messageLink = interaction.options.getString("message-link") 
+    if (messageLink === null) {
+        messageLink = await getLatestQueueMessageLink(interaction.channel!.id)
+        if (messageLink === null)
+            return null
+    }
+    return messageLink
 }
 
 export async function makeRooms(message: Message) {
