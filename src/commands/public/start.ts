@@ -69,6 +69,7 @@ async function handleStart(interaction: CommandInteraction) {
         return reply(interaction, {content: 'You do not have permission to use this command', ephemeral: true})
 
     await interaction.deferReply({ephemeral: true})
+    console.log(`${interaction.member.displayName} started a new queue`)
 
     if (!(interaction.channel instanceof TextChannel)) {
         await reply(interaction, 'The text channel must be a regular text channel. Make sure it is not a thread channel.')

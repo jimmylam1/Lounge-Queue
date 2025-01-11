@@ -58,6 +58,7 @@ export function queueButtons() {
  * Create a new lounge queue message. Returns true if successful
  */
 export async function createLoungeQueue(guildId: string, channel: TextChannel, autoCloseAfter: number | null, format?: FormatOption, endTime?: number) {
+    await channel.send("A Lounge Queue event has started! @here")
     const message = await channel.send({embeds: [{description: 'Initializing Lounge Queue...'}]})
 
     const query = `INSERT INTO loungeQueue 
