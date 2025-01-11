@@ -25,10 +25,16 @@ export async function deleteOldRowsAndRooms(client: Client) {
 
         await dbConnect(async db => {
             // order is important due to foreign key constraints
-            await db.execute(`DELETE FROM players WHERE ${playerWhereClauses.join(" OR ")}`, queueIds)
-            await db.execute(`DELETE FROM votes WHERE ${roomWhereClauses.join(" OR ")}`, roomIds)
-            await db.execute(`DELETE FROM rooms WHERE ${roomWhereClauses.join(" OR ")}`, roomIds)
-            await db.execute(`DELETE FROM loungeQueue WHERE ${queueWhereClauses.join(" OR ")}`, queueIds)
+            if (queueIds.length) {
+                await db.execute(`DELETE FROM players WHERE ${playerWhereClauses.join(" OR ")}`, queueIds)
+            }
+            if (roomIds.length) {
+                await db.execute(`DELETE FROM votes WHERE ${roomWhereClauses.join(" OR ")}`, roomIds)
+                await db.execute(`DELETE FROM rooms WHERE ${roomWhereClauses.join(" OR ")}`, roomIds)
+            }
+            if (queueIds.length) {
+                await db.execute(`DELETE FROM loungeQueue WHERE ${queueWhereClauses.join(" OR ")}`, queueIds)
+            }
         })
     }
 }

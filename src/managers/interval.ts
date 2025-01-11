@@ -16,9 +16,9 @@ export function runInterval(client: Client) {
 
     // check to delete old db rows and rooms once an hour
     setTimeout(() => {
-        deleteOldRowsAndRooms(client).catch(e => console.error(`interval.ts deleteOldRowsAndRooms() failed ${e}`))
+        deleteOldRowsAndRooms(client).catch(e => console.error(`interval.ts deleteOldRowsAndRooms() failed`, e))
         setInterval(() => {
-            deleteOldRowsAndRooms(client).catch(e => console.error(`interval.ts deleteOldRowsAndRooms() failed ${e}`))
+            deleteOldRowsAndRooms(client).catch(e => console.error(`interval.ts deleteOldRowsAndRooms() failed`, e))
         }, 3600000);
     }, findNextHour().getTime() - Date.now());
 }
