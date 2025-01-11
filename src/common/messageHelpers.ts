@@ -13,15 +13,22 @@ export const blankQueueList = "`Queue List`\n"
                             + "\n"
                             + "(+8 players for 1 full rooms)"
 
-export function queueMessageEmbed(queueList: string, active: boolean, format?: FormatOption) {
+export function queueMessageEmbed(queueList: string, active: boolean, format?: FormatOption, closeTime?: number) {
+    let footer = "A poll will be created in each room once this queue closes."
+    if (format)
+        footer = `Lounge Queue format: ${format}`
+    if (closeTime) {
+        const time = Math.floor(closeTime / 1000)
+        if (!queueList.endsWith("\n"))
+            queueList += "\n"
+        queueList += `\nQueue closes at <t:${time}:t> (<t:${time}:R>)`
+    }
+
     const embedOptions: MessageEmbedOptions = {
         description: queueList,
-        color: active ? '#1e7fd4' : undefined
+        color: active ? '#1e7fd4' : undefined,
+        footer: {text: footer}
     }
-    if (format)
-        embedOptions.footer = {text: `Lounge Queue format: ${format}`}
-    else
-        embedOptions.footer = {text: `A poll will be created in each room once this queue closes.`}
 
     return embedOptions
 }
@@ -57,12 +64,13 @@ export async function createLoungeQueue(guildId: string, channel: TextChannel, a
         (guildId, channelId, messageId, startTime, endTime, active, format)
         VALUES (?, ?, ?, ?, ?, ?, ?)`
     const now = Date.now()
+    const closeTime = endTime || (autoCloseAfter ? now + 60000*autoCloseAfter : null)
     const params = [
         guildId,
         channel.id,
         message.id,
         now,
-        endTime || (autoCloseAfter ? now + 60000*autoCloseAfter : null),
+        closeTime,
         true,
         format || null
     ]
@@ -71,7 +79,7 @@ export async function createLoungeQueue(guildId: string, channel: TextChannel, a
     })
 
     if (res.changes === 1) {
-        const embed = queueMessageEmbed(blankQueueList, true, format)
+        const embed = queueMessageEmbed(blankQueueList, true, format, closeTime || undefined)
         const buttons = queueButtons()
         await message.edit({embeds: [embed], components: [buttons]})
         return true
@@ -85,7 +93,8 @@ export async function updateLoungeQueueMessage(message: Message, active: boolean
         return
 
     const queue = await fetchQueueFromDb(message.id)
-    const embed = queueMessageEmbed(queueList.message, active, queue?.format || undefined)
+    const endTime = queue?.endTime || undefined
+    const embed = queueMessageEmbed(queueList.message, active, queue?.format || undefined, endTime)
     const buttons = queueButtons()
     const components = active ? [buttons] : []
     await message.edit({embeds: [embed], components})
