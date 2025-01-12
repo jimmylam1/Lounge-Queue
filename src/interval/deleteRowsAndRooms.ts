@@ -23,19 +23,22 @@ export async function deleteOldRowsAndRooms(client: Client) {
 
         await deleteRoomsManager(client, threshold).catch(e => console.error(`deleteRowsAndRooms.ts deleteRoomsManager() failed ${e}`))
 
+        let last = 0
         await dbConnect(async db => {
             // order is important due to foreign key constraints
             if (queueIds.length) {
                 await db.execute(`DELETE FROM players WHERE ${playerWhereClauses.join(" OR ")}`, queueIds)
             }
+            last = 1
             if (roomIds.length) {
                 await db.execute(`DELETE FROM votes WHERE ${roomWhereClauses.join(" OR ")}`, roomIds)
                 await db.execute(`DELETE FROM rooms WHERE ${roomWhereClauses.join(" OR ")}`, roomIds)
             }
+            last = 2
             if (queueIds.length) {
                 await db.execute(`DELETE FROM loungeQueue WHERE ${queueWhereClauses.join(" OR ")}`, queueIds)
             }
-        })
+        }).catch(e => console.error(`deleteRowsAndRooms.ts main delete failed at last=${last}`, e))
     }
 }
 
