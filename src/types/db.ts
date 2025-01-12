@@ -9,6 +9,11 @@ export type sqlite3Wrapper = {
 ////////////////////////////////////////
 // database tables
 
+export type Config = {
+    guildId: string;
+    joinChannelId: string | null;
+}
+
 export type StaffRoles = {
     roleDiscordId: string;
     guildId: string;
@@ -50,6 +55,13 @@ export type Votes = {
     playerDiscordId: string;
     vote: FormatOption;
     updated: number;
+}
+
+export type OpenSchedule = {
+    guildId: string;
+    startTime: number;
+    endTime: number;
+    format: FormatOption | null;
 }
 
 ////////////////////////////////////////

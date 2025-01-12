@@ -1,4 +1,4 @@
-import { ApplicationCommandData, CommandInteraction, Constants } from "discord.js";
+import { ApplicationCommandData, CommandInteraction, Constants, TextChannel } from "discord.js";
 import { slashCommandEvent } from "../../common/discordEvents";
 import { reply } from "../../common/util";
 import { dbConnect } from "../../common/db/connect";
@@ -46,6 +46,19 @@ export const data: ApplicationCommandData = {
                 },
             ]
         },
+        {
+            name: "join-channel",
+            description: "Set the channel to be used by /schedule",
+            type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
+            options: [
+                {
+                    name: "channel",
+                    description: "The join channel",
+                    required: true,
+                    type: Constants.ApplicationCommandOptionTypes.CHANNEL
+                },
+            ],
+        },
     ]
 }
 
@@ -59,6 +72,8 @@ slashCommandEvent.on(data.name, async (interaction) => {
         handleAddStaff(interaction).catch(e => console.error(`config.ts handleAddStaff()`, e))
     else if (interaction.options.getSubcommand() == "remove-role")
         handleRemoveStaff(interaction).catch(e => console.error(`config.ts handleRemoveStaff()`, e))
+    else if (interaction.options.getSubcommand() == "join-channel")
+        handleAddJoinChannel(interaction).catch(e => console.error(`config.ts handleAddJoinChannel()`, e))
 })
 
 async function handleList(interaction: CommandInteraction) {
@@ -100,4 +115,27 @@ async function handleRemoveStaff(interaction: CommandInteraction) {
         await reply(interaction, `Successfully removed the role ${role}`)
     else
         await reply(interaction, "Something went wrong removing the role")
+}
+
+async function handleAddJoinChannel(interaction: CommandInteraction) {
+    if (!interaction.guild)
+        return
+    await interaction.deferReply()
+
+    const channel = interaction.options.getChannel("channel")
+    if (!(channel instanceof TextChannel))
+        return await reply(interaction, `The channel needs to be a text channel, and it cannot be a thread channel`)
+
+    const query = `INSERT INTO config (guildId, joinChannelId) 
+        VALUES (?, ?) 
+        ON CONFLICT (guildId) DO 
+        UPDATE SET joinChannelId = excluded.joinChannelId`
+    const res = await dbConnect(async db => {
+        return await db.execute(query, [interaction.guild!.id, channel.id])
+    }).catch(e => console.error(`config.ts handleAddJoinChannel() ${e}`))
+
+    if (res?.changes)
+        await reply(interaction, `Successfully updated the join channel to ${channel}`)
+    else
+        await reply(interaction, "Something went wrong updating the channel")
 }

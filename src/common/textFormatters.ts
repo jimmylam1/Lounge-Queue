@@ -1,5 +1,5 @@
 import { dbConnect } from "./db/connect"
-import { StaffRoles, Votes } from "../types/db";
+import { Config, StaffRoles, Votes } from "../types/db";
 import { guildConfig } from "./data/guildConfig";
 import { QueuePlayer } from "../types/player";
 import { FormatOption } from "../types/guildConfig";
@@ -10,7 +10,8 @@ import { getLatestQueueInChannel } from "./dbHelpers";
 export async function listConfig(guildId: string) {
     let res = await dbConnect(async db => {
         const staffRoles = await db.fetchAll<StaffRoles>("SELECT * FROM staffRoles WHERE guildId = ?", [guildId])
-        return { staffRoleIds: staffRoles.map(r => r.roleDiscordId) }
+        const config = await db.fetchOne<Config>("SELECT * FROM config WHERE guildId = ?", [guildId])
+        return { staffRoleIds: staffRoles.map(r => r.roleDiscordId), config }
     }).catch(e => console.error(`config.ts list() ${e}`))
 
     if (!res)
@@ -18,6 +19,7 @@ export async function listConfig(guildId: string) {
     
     let text = "`Server configuration`\n"
              + `queue-staff: ${res.staffRoleIds.map(r => `<@&${r}>`).join(", ") || "None"}\n`
+             + `join-channel: ${res.config?.joinChannelId ? `<#${res.config.joinChannelId}>` : "None"}\n`
              + '\n'
              + 'The config options below can only be set by the bot developer\n'
              + `min-full-rooms: ${guildConfig[guildId].minFullRooms}\n`
