@@ -29,7 +29,7 @@ async function handleJoin(interaction: ButtonInteraction) {
     await interaction.deferUpdate()
 
     const mmr = await guildConfig[interaction.guild!.id].getMmr(interaction.member.displayName)
-    if (!mmr)
+    if (mmr === null)
         return replyToButton(interaction, {content: "Unable to join the queue because your MMR couldn't be found", ephemeral: true})
 
     const player: Player = {

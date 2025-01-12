@@ -13,7 +13,7 @@ export async function mmrMktLounge(playerName: string) {
             return
         const data: MktLoungeData[] = await response.json()
         for (let player of data) {
-            newCache[player.name] = player.mmr
+            newCache[player.name.toLowerCase()] = player.mmr
         }
         mktCache = newCache
     }
@@ -22,5 +22,5 @@ export async function mmrMktLounge(playerName: string) {
         await fetchApi().catch(e => console.error(`mmr.ts mmrMktLounge() fetchApi() failed: ${e}`))
         lastMktFetched = Date.now()
     }
-    return mktCache[playerName] || null
+    return mktCache[playerName.toLowerCase()] || null
 }
