@@ -16,5 +16,7 @@ export const indexes = [
         loungeQueue (startTime, active) WHERE active = 0`,
     `CREATE INDEX IF NOT EXISTS deleteRooms ON 
         rooms (createdAt)`,
+    `CREATE INDEX IF NOT EXISTS listSchedules ON 
+        schedule (guildId, startTime ASC)`
 ]
     

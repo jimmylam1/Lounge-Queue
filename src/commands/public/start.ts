@@ -1,8 +1,8 @@
-import { ApplicationCommandData, ApplicationCommandOptionChoiceData, AutocompleteInteraction, CommandInteraction, Constants, GuildMember, MessageActionRow, MessageButton, TextChannel } from "discord.js";
+import { ApplicationCommandData, AutocompleteInteraction, CommandInteraction, Constants, GuildMember, TextChannel } from "discord.js";
 import { autocompleteEvent, slashCommandEvent } from "../../common/discordEvents";
 import { isFormatOption, reply } from "../../common/util";
 import { guildConfig } from "../../common/data/guildConfig";
-import { createLoungeQueue } from "../../common/messageHelpers";
+import { autoCloseChoices, createLoungeQueue } from "../../common/messageHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { getActiveQueuesInChannel } from "../../common/dbHelpers";
 
@@ -20,7 +20,7 @@ export const data: ApplicationCommandData = {
             name: "auto-close",
             description: "Optionally allow bot to close polling and make rooms after set minutes",
             type: Constants.ApplicationCommandOptionTypes.INTEGER,
-            choices: autoCloseChoices()
+            choices: autoCloseChoices(true)
         },
     ]
 }
@@ -34,23 +34,6 @@ autocompleteEvent.on(data.name, async (interaction) => {
 slashCommandEvent.on(data.name, async (interaction) => {
     handleStart(interaction).catch(e => console.error(`start.ts handleStart()`, e))
 })
-
-function autoCloseChoices() {
-    const choices: ApplicationCommandOptionChoiceData[] = [{name: 'None (Default)', value: 0}]
-    for (let i = 30; i <= 120; i += 15) {
-        if (i >= 60) {
-            const hours = Math.floor(i/60)
-            const minutes = i % 60
-            let name = `${hours} hours`
-            if (minutes)
-                name += ` ${minutes} minutes`
-            choices.push({name, value: i})
-        }
-        else
-            choices.push({name: `${i} minutes`, value: i})
-    }
-    return choices
-}
 
 async function autocompleteFormat(interaction: AutocompleteInteraction) {
     const userInput = interaction.options.getFocused(true).value

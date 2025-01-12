@@ -6,6 +6,7 @@ import '../commands/public/handlePoll'
 import { data as makeRoomsData } from '../commands/public/makeRooms'
 import { data as openData } from '../commands/public/open'
 import { data as pingStaffData } from '../commands/public/pingStaff'
+import { data as scheduleData } from '../commands/public/schedule'
 import { data as scoreboardData } from '../commands/public/scoreboard'
 import { data as startData } from '../commands/public/start'
 
@@ -16,6 +17,7 @@ export const commandData = [
     makeRoomsData,
     openData,
     pingStaffData,
+    scheduleData,
     scoreboardData,
     startData
 ]

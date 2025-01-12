@@ -1,4 +1,4 @@
-import { LoungeQueue } from "../types/db"
+import { Config, LoungeQueue } from "../types/db"
 import { QueuePlayer } from "../types/player"
 import { dbConnect } from "./db/connect"
 
@@ -29,5 +29,11 @@ export async function getActiveQueuesInChannel(channelId: string) {
 export async function getLatestQueueInChannel(channelId: string) {
     return await dbConnect(async db => {
         return await db.fetchOne<LoungeQueue>("SELECT * FROM loungeQueue WHERE id = (SELECT MAX(id) FROM loungeQueue WHERE channelId = ?)", [channelId])
+    })
+}
+
+export async function getConfig(guildId: string) {
+    return await dbConnect(async db => {
+        return await db.fetchOne<Config>("SELECT * FROM config WHERE guildId = ?", [guildId])
     })
 }

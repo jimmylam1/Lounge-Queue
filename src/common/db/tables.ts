@@ -49,7 +49,7 @@ const votes = `CREATE TABLE IF NOT EXISTS votes(
     PRIMARY KEY (roomChannelId, playerDiscordId)
 ) WITHOUT ROWID`
 
-const openSchedule = `CREATE TABLE IF NOT EXISTS openSchedule(
+const schedule = `CREATE TABLE IF NOT EXISTS schedule(
     guildId TEXT NOT NULL,
     startTime INTEGER NOT NULL,
     endTime INTEGER NOT NULL,
@@ -57,4 +57,4 @@ const openSchedule = `CREATE TABLE IF NOT EXISTS openSchedule(
     PRIMARY KEY (guildid, startTime)
 ) WITHOUT ROWID`
 
-export const tables = [config, staffRoles, loungeQueue, players, rooms, votes, openSchedule]
+export const tables = [config, staffRoles, loungeQueue, players, rooms, votes, schedule]

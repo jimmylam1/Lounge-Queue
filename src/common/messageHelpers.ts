@@ -1,4 +1,4 @@
-import { Client, CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbedOptions, TextChannel, ThreadChannel } from "discord.js";
+import { ApplicationCommandOptionChoiceData, Client, CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbedOptions, TextChannel, ThreadChannel } from "discord.js";
 import { dbConnect } from "./db/connect";
 import { getRooms, list } from "./core";
 import { LoungeQueue, Votes } from "../types/db";
@@ -270,4 +270,23 @@ export async function closePoll(message: Message) {
     })
     await message.channel.send(text)
     return true
+}
+
+export function autoCloseChoices(canBeZero=true) {
+    const choices: ApplicationCommandOptionChoiceData[] = []
+    if (canBeZero)
+        choices.push({name: 'None (Default)', value: 0})
+    for (let i = 30; i <= 120; i += 15) {
+        if (i >= 60) {
+            const hours = Math.floor(i/60)
+            const minutes = i % 60
+            let name = `${hours} hours`
+            if (minutes)
+                name += ` ${minutes} minutes`
+            choices.push({name, value: i})
+        }
+        else
+            choices.push({name: `${i} minutes`, value: i})
+    }
+    return choices
 }

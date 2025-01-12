@@ -57,7 +57,7 @@ export type Votes = {
     updated: number;
 }
 
-export type OpenSchedule = {
+export type Schedule = {
     guildId: string;
     startTime: number;
     endTime: number;

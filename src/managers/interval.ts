@@ -4,6 +4,7 @@ import { closeQueues } from "../interval/closeQueues";
 import { deleteOldRowsAndRooms } from "../interval/deleteRowsAndRooms";
 import { openExampleLoungeQueue } from "../interval/exampleOpenLoungeQueue";
 import { findNext10Seconds, findNextHour } from "../common/util";
+import { openScheduledQueues } from "../interval/schedule";
 
 export function runInterval(client: Client) {
     // run every 10 seconds, including on the minute
@@ -44,7 +45,8 @@ function mainIntervalHandler(client: Client) {
 
 async function closeAndOpenQueues(client: Client) {
     await closeQueues(client)
-    
+    await openScheduledQueues(client)
+
     // custom server lounge queue intervals should be added here
     // await openExampleLoungeQueue(client)
 }
