@@ -15,6 +15,7 @@ describe('config tests', () => {
         // base case
         let expected = "`Server configuration`\n"
                      + `queue-staff: None\n`
+                     + `join-channel: None\n`
                      + '\n'
                      + 'The config options below can only be set by the bot developer\n'
                      + `min-full-rooms: 1\n`
@@ -28,6 +29,7 @@ describe('config tests', () => {
         })
         expected = "`Server configuration`\n"
                  + `queue-staff: <@&11111>\n`
+                 + `join-channel: None\n`
                  + '\n'
                  + 'The config options below can only be set by the bot developer\n'
                  + `min-full-rooms: 1\n`
@@ -41,6 +43,7 @@ describe('config tests', () => {
         })
         expected = "`Server configuration`\n"
                  + `queue-staff: <@&11111>, <@&22222>\n`
+                 + `join-channel: None\n`
                  + '\n'
                  + 'The config options below can only be set by the bot developer\n'
                  + `min-full-rooms: 1\n`
