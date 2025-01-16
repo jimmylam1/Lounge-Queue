@@ -257,6 +257,7 @@ export async function closePoll(message: Message) {
     })
 
     await message.delete()
+    await removePollMessageIdFromDb(message.channel.id).catch(e => console.error(`messageHelpers.ts removePollMessageIdFromDb() failed`, e))
     const { voteText, winningFormat } = await getPollVotes(message.guild.id, votes, true)
     const players = await getPlayersInRoom(message.channel.id)
     const teams = guildConfig[message.guild.id].randomizeTeams(players, winningFormat)
@@ -270,6 +271,12 @@ export async function closePoll(message: Message) {
     })
     await message.channel.send(text)
     return true
+}
+
+async function removePollMessageIdFromDb(roomChannelId: string) {
+    return await dbConnect(async db => {
+        return await db.execute("UPDATE rooms SET pollMessageId = null WHERE roomChannelId = ?", [roomChannelId])
+    })
 }
 
 export function autoCloseChoices(canBeZero=true) {
