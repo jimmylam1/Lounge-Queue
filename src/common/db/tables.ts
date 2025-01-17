@@ -1,6 +1,11 @@
 const config = `CREATE TABLE IF NOT EXISTS config(
     guildId TEXT PRIMARY KEY NOT NULL,
-    joinChannelId TEXT
+    joinChannelId TEXT,
+    subChannelId TEXT,
+    subPingRoleId TEXT,
+    subMmrDiff INTEGER,
+    subMinutes INTEGER,
+    subStaffOnly BOOLEAN
 ) WITHOUT ROWID`
 
 const staffRoles = `CREATE TABLE IF NOT EXISTS staffRoles(
@@ -57,4 +62,19 @@ const schedule = `CREATE TABLE IF NOT EXISTS schedule(
     PRIMARY KEY (guildid, startTime)
 ) WITHOUT ROWID`
 
-export const tables = [config, staffRoles, loungeQueue, players, rooms, votes, schedule]
+const subs = `CREATE TABLE IF NOT EXISTS subs(
+    id INTEGER PRIMARY KEY,
+    queue INTEGER NOT NULL REFERENCES loungeQueue(id),
+    playerName TEXT NOT NULL,
+    roomChannelId TEXT NOT NULL,
+    initMessageId TEXT,
+    lookingChannelId TEXT NOT NULL,
+    lookingMessageId TEXT,
+    minMmr INTEGER NOT NULL,
+    maxMmr INTEGER NOT NULL,
+    startTime INTEGER NOT NULL,
+    expires INTEGER NOT NULL,
+    UNIQUE (playerName, roomChannelId)
+)`
+
+export const tables = [config, staffRoles, loungeQueue, players, rooms, votes, schedule, subs]

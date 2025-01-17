@@ -59,6 +59,52 @@ export const data: ApplicationCommandData = {
                 },
             ],
         },
+        {
+            name: "sub",
+            description: "Configure the /sub command used to find room subs",
+            type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
+            options: [
+                {
+                    name: "channel",
+                    description: "The channel to send the looking for sub messages to",
+                    required: true,
+                    type: Constants.ApplicationCommandOptionTypes.CHANNEL
+                },
+                {
+                    name: "role-to-ping",
+                    description: "The role to ping along with each sub message. Ex: @tags",
+                    required: true,
+                    type: Constants.ApplicationCommandOptionTypes.ROLE
+                },
+                {
+                    name: "max-mmr-diff",
+                    description: "The maximum MMR difference allowed. Ex: 500",
+                    required: true,
+                    type: Constants.ApplicationCommandOptionTypes.INTEGER,
+                },
+                {
+                    name: "max-minutes",
+                    description: "The maximum minutes to look for sub. Ex: 10",
+                    required: true,
+                    type: Constants.ApplicationCommandOptionTypes.INTEGER
+                },
+                {
+                    name: "permission",
+                    description: "Who can use the /sub command",
+                    required: true,
+                    type: Constants.ApplicationCommandOptionTypes.STRING,
+                    choices: [
+                        {name: 'LQ Staff Only', value: 'LQ Staff Only'},
+                        {name: 'Everyone', value: 'Everyone'}
+                    ]
+                },
+            ],
+        },
+        {
+            name: "sub-remove",
+            description: "Remove the /sub command configurations to disable it",
+            type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
+        },
     ]
 }
 
@@ -66,6 +112,7 @@ slashCommandEvent.on(data.name, async (interaction) => {
     if (!interaction.memberPermissions?.has('MANAGE_ROLES'))
         return reply(interaction, {content: 'You need to have Manage Roles permission to use this command', ephemeral: true})
             .catch(e => console.error(`config.ts MANAGE_ROLES reply`, e))
+
     if (interaction.options.getSubcommand() == "list")
         handleList(interaction).catch(e => console.error(`config.ts handleList()`, e))
     else if (interaction.options.getSubcommand() == "add-role")
@@ -74,6 +121,10 @@ slashCommandEvent.on(data.name, async (interaction) => {
         handleRemoveStaff(interaction).catch(e => console.error(`config.ts handleRemoveStaff()`, e))
     else if (interaction.options.getSubcommand() == "join-channel")
         handleAddJoinChannel(interaction).catch(e => console.error(`config.ts handleAddJoinChannel()`, e))
+    else if (interaction.options.getSubcommand() == "sub")
+        handleSubConfig(interaction).catch(e => console.error(`config.ts handleSubConfig()`, e))
+    else if (interaction.options.getSubcommand() == "sub-remove")
+        handleSubRemove(interaction).catch(e => console.error(`config.ts handleSubRemove()`, e))
 })
 
 async function handleList(interaction: CommandInteraction) {
@@ -138,4 +189,64 @@ async function handleAddJoinChannel(interaction: CommandInteraction) {
         await reply(interaction, `Successfully updated the join channel to ${channel}`)
     else
         await reply(interaction, "Something went wrong updating the channel")
+}
+
+async function handleSubConfig(interaction: CommandInteraction) {
+    const channel = interaction.options.getChannel("channel")
+    const role = interaction.options.getRole("role-to-ping")
+    const maxMmrDiff = interaction.options.getInteger("max-mmr-diff")
+    const maxMinutes = interaction.options.getInteger("max-minutes")
+    const permission = interaction.options.getString("permission")
+
+    if (channel === null || role === null || maxMmrDiff === null || maxMinutes === null || permission === null) {
+        console.error(`config.ts handleSubConfig() an option is null`)
+        return reply(interaction, `There was a problem reading the command arguments`)
+    }
+
+    await interaction.deferReply()
+
+    if (maxMmrDiff <= 0)
+        return reply(interaction, `Error: max-mmr-diff needs to be greater than 0`)
+    if (maxMinutes <= 0)
+        return reply(interaction, `Error: max-minutes needs to be greater than 0`)
+
+    const query = `INSERT INTO config 
+        (guildId, subChannelId, subPingRoleId, subMmrDiff, subMinutes, subStaffOnly) 
+        VALUES (?, ?, ?, ?, ?, ?) 
+        ON CONFLICT (guildId) DO 
+        UPDATE SET 
+        subChannelId = excluded.subChannelId, 
+        subPingRoleId = excluded.subPingRoleId, 
+        subMmrDiff = excluded.subMmrDiff, 
+        subMinutes = excluded.subMinutes, 
+        subStaffOnly = excluded.subStaffOnly
+        `
+    const staffOnly = permission === 'LQ Staff Only'
+    const res = await dbConnect(async db => {
+        return await db.execute(query, [interaction.guild!.id, channel.id, role.id, maxMmrDiff, maxMinutes, staffOnly])
+    }).catch(e => console.error(`config.ts handleSubConfig() ${e}`))
+
+    if (res?.changes)
+        await reply(interaction, `Successfully updated the /sub configuration`)
+    else
+        await reply(interaction, "Something went wrong updated the /sub configuration")
+}
+
+async function handleSubRemove(interaction: CommandInteraction) {
+    const query = `UPDATE config SET
+    subChannelId = null, 
+    subPingRoleId = null, 
+    subMmrDiff = null, 
+    subMinutes = null, 
+    subStaffOnly = null
+    WHERE guildId = ?`
+
+    const res = await dbConnect(async db => {
+        return await db.execute(query, [interaction.guild!.id])
+    }).catch(e => console.error(`config.ts handleSubRemove() ${e}`))
+
+    if (res?.changes)
+        await reply(interaction, `Successfully removed the /sub configuration`)
+    else
+        await reply(interaction, "Something went wrong removing the /sub configuration")
 }

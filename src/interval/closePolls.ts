@@ -44,5 +44,5 @@ async function deletePollMessageIdFromRooms(roomChannelIds: string[]) {
     return await dbConnect(async db => {
         return await db.execute(`${query} ${whereClause.join(" OR ")}`, roomChannelIds)
     })
-    // don't delete the votes, want to keep them around for at least 24 hours
+    // don't delete the votes, want to keep them around for at least 24 hours. handled by deleteOldRowsAndRooms() in interval.ts
 }

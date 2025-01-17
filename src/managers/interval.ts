@@ -5,6 +5,7 @@ import { deleteOldRowsAndRooms } from "../interval/deleteRowsAndRooms";
 import { openExampleLoungeQueue } from "../interval/exampleOpenLoungeQueue";
 import { findNext10Seconds, findNextHour } from "../common/util";
 import { openScheduledQueues } from "../interval/schedule";
+import { cancelSubs } from "../interval/cancelSub";
 
 export function runInterval(client: Client) {
     // run every 10 seconds, including on the minute
@@ -27,6 +28,7 @@ export function runInterval(client: Client) {
 // need to check if function is running since they may take longer than the 10 second interval
 var pollsIsRunning = false
 var queuesIsRunning = false
+var subsIsRunning = false
 function mainIntervalHandler(client: Client) {
     // check for polls that should close
     if (!pollsIsRunning) {
@@ -40,6 +42,12 @@ function mainIntervalHandler(client: Client) {
         closeAndOpenQueues(client)
             .catch(e => console.error(`interval.ts closeAndOpenQueues() failed ${e}`))
             .finally(() => queuesIsRunning = false)
+    }
+    // check for sub messages to cancel
+    if (!subsIsRunning) {
+        cancelSubs(client)
+            .catch(e => console.error(`interval.ts cancelSubs() failed ${e}`))
+            .finally(() => subsIsRunning = false)
     }
 }
 

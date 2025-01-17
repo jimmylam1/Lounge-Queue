@@ -7,7 +7,8 @@ import { formatTeams, getLatestQueueMessageLink, getPollVotes, getScoreboard, li
 import { ThreadAutoArchiveDuration } from "discord-api-types/v10";
 import { FormatOption } from "../types/guildConfig";
 import { QueuePlayer } from "../types/player";
-import { fetchQueueFromDb, getPlayersInRoom, markQueueMadeRooms } from "./dbHelpers";
+import { fetchQueueFromDb, getPlayersInRoom, getSubRowFromDb, markQueueMadeRooms } from "./dbHelpers";
+import { SuccessStatus } from "../types/loungeQueue";
 
 export const blankQueueList = "`Queue List`\n"
                             + "\n"
@@ -296,4 +297,18 @@ export function autoCloseChoices(canBeZero=true) {
             choices.push({name: `${i} minutes`, value: i})
     }
     return choices
+}
+
+export async function deleteLookingForSubMessage(channel: TextChannel, rowId: number): Promise<SuccessStatus> {
+    const sub = await getSubRowFromDb(rowId)
+    if (!sub)
+        return {success: false, message: ''}
+    if (!sub.lookingMessageId) {
+        console.error(`sub.ts deleteLookingForSubMessage() messageId is null`)
+        return {success: false, message: ''}
+    }
+    const message = await channel.messages.fetch(sub.lookingMessageId).catch(e => console.error(`sub.ts deleteLookingForSubMessage lookingMessage failed ${e}`))
+    if (message)
+        await message.delete()
+    return {success: true, message: ''}
 }

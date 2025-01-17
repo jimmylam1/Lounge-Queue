@@ -1,4 +1,4 @@
-import { Config, LoungeQueue } from "../types/db"
+import { Config, LoungeQueue, Rooms, Subs } from "../types/db"
 import { QueuePlayer } from "../types/player"
 import { dbConnect } from "./db/connect"
 
@@ -35,5 +35,23 @@ export async function getLatestQueueInChannel(channelId: string) {
 export async function getConfig(guildId: string) {
     return await dbConnect(async db => {
         return await db.fetchOne<Config>("SELECT * FROM config WHERE guildId = ?", [guildId])
+    })
+}
+
+export async function getRoom(roomChannelId: string) {
+    return await dbConnect(async db => {
+        return await db.fetchOne<Rooms>(`SELECT * FROM rooms WHERE roomChannelId = ?`, [roomChannelId])
+    })
+}
+
+export async function getSubRowFromDb(rowId: number) {
+    return await dbConnect(async db => {
+        return await db.fetchOne<Subs>(`SELECT * FROM subs WHERE id = ?`, [rowId])
+    })
+}
+
+export async function removeSubRowFromDb(rowId: number) {
+    return await dbConnect(async db => {
+        return await db.execute(`DELETE FROM subs WHERE id = ?`, [rowId])
     })
 }

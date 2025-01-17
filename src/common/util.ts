@@ -72,7 +72,7 @@ export function findNext10Seconds() {
 }
 
 /**
- * Reply to an interaction, whether a slash command or a button press. 
+ * Reply to an interaction, whether a slash command or a button press. If button, will update message if function called interaction.deferUpdate()
  */
 export async function reply(interaction: CommandInteraction | ButtonInteraction, interactionOptions: string | InteractionEditReplyOptions | InteractionReplyOptions, options?: ReplyOptions) {
     try {

@@ -16,7 +16,7 @@ export const guildConfig: {[key: string]: GuildConfig} = {
         minFullRooms: 1,
         roomSize: 8,
         formats: ['FFA', '2v2', '4v4'],
-        getMmr: mmrMktLounge,
+        getMmr: async () => 4000,
         randomizeTeams: randomizeTeamsMktLounge,
         deleteOldRooms: true,
         botAccess: ['761673331388317717'] // Ice Mario

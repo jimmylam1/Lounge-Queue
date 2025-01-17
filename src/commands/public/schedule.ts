@@ -100,6 +100,7 @@ async function handleAdd(interaction: CommandInteraction) {
     const openTime = interaction.options.getString("open-time")
     const autoClose = interaction.options.getInteger("auto-close")
     const format = interaction.options.getString("format")
+    console.log(`${interaction.member.displayName} used /schedule openTime=${openTime} autoClose=${autoClose} format=${format}`)
 
     const parsedOpenTime = chrono.parseDate(openTime!, {}, {forwardDate: true})
     if (!parsedOpenTime) {

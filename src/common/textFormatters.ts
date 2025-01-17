@@ -16,15 +16,25 @@ export async function listConfig(guildId: string) {
 
     if (!res)
         return 'There was a problem listing the server configuration'
+
+    let subText = "None"
+    if (res.config?.subChannelId) {
+        subText = `\n  - channel: <#${res.config.subChannelId}>\n`
+                + `  - ping role: <@&${res.config.subPingRoleId}>\n`
+                + `  - max mmr diff: ${res.config.subMmrDiff}\n`
+                + `  - max minutes: ${res.config.subMinutes}\n`
+                + `  - who can use /sub: ${res.config.subStaffOnly ? "LQ staff only" : "Everyone"}`
+    }
     
     let text = "`Server configuration`\n"
-             + `queue-staff: ${res.staffRoleIds.map(r => `<@&${r}>`).join(", ") || "None"}\n`
-             + `join-channel: ${res.config?.joinChannelId ? `<#${res.config.joinChannelId}>` : "None"}\n`
+             + `- queue-staff: ${res.staffRoleIds.map(r => `<@&${r}>`).join(", ") || "None"}\n`
+             + `- join-channel: ${res.config?.joinChannelId ? `<#${res.config.joinChannelId}>` : "None"}\n`
+             + `- /sub config: ${subText}\n`
              + '\n'
              + 'The config options below can only be set by the bot developer\n'
-             + `min-full-rooms: ${guildConfig[guildId].minFullRooms}\n`
-             + `room-size: ${guildConfig[guildId].roomSize}\n`
-             + `formats: ${guildConfig[guildId].formats.join(", ")}\n`
+             + `- min-full-rooms: ${guildConfig[guildId].minFullRooms}\n`
+             + `- room-size: ${guildConfig[guildId].roomSize}\n`
+             + `- formats: ${guildConfig[guildId].formats.join(", ")}\n`
     return text
 }
 
@@ -124,7 +134,7 @@ export async function getPollVotes(guildId: string, votesArray: Votes[], hasEnde
 }
 
 export function roomFooter() {
-    let text = `-# Use \`/scoreboard\` to get the scoreboard. Use \`/ping-staff\` to ping Lounge Queue staff.\n`
+    let text = `-# Available room commands: \`/scoreboard\`, \`/ping-staff\`, \`/sub\`\n`
     return text
 }
 

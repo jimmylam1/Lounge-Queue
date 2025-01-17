@@ -12,6 +12,11 @@ export type sqlite3Wrapper = {
 export type Config = {
     guildId: string;
     joinChannelId: string | null;
+    subChannelId: string | null;
+    subPingRoleId: string | null;
+    subMmrDiff: number | null;
+    subMinutes: number | null;
+    subStaffOnly: boolean | null;
 }
 
 export type StaffRoles = {
@@ -62,6 +67,20 @@ export type Schedule = {
     startTime: number;
     endTime: number;
     format: FormatOption | null;
+}
+
+export type Subs = {
+    id: number;
+    queue: number;
+    playerName: string;
+    roomChannelId: string;
+    initMessageId: string | null;
+    lookingChannelId: string;
+    lookingMessageId: string | null;
+    minMmr: number;
+    maxMmr: number;
+    startTime: number;
+    expires: number;
 }
 
 ////////////////////////////////////////
