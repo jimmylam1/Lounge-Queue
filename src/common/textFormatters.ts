@@ -25,11 +25,17 @@ export async function listConfig(guildId: string) {
                 + `  - max minutes: ${res.config.subMinutes}\n`
                 + `  - who can use /sub: ${res.config.subStaffOnly ? "LQ staff only" : "Everyone"}`
     }
+    let extensionText = "None"
+    if (res.config?.queuePlusOneExtensionMinutes) {
+        extensionText = `\n  - max minutes: ${res.config.queuePlusOneExtensionMinutes}\n`
+                      + `  - ping role: <@&${res.config.queuePlusOnePingRoleId}>`
+    }
     
     let text = "`Server configuration`\n"
              + `- queue-staff: ${res.staffRoleIds.map(r => `<@&${r}>`).join(", ") || "None"}\n`
              + `- join-channel: ${res.config?.joinChannelId ? `<#${res.config.joinChannelId}>` : "None"}\n`
              + `- /sub config: ${subText}\n`
+             + `- queue extension: ${extensionText}\n`
              + '\n'
              + 'The config options below can only be set by the bot developer\n'
              + `- min-full-rooms: ${guildConfig[guildId].minFullRooms}\n`

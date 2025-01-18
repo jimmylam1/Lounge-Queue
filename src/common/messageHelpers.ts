@@ -92,7 +92,7 @@ export async function createLoungeQueue(guildId: string, channel: TextChannel, a
 export async function updateLoungeQueueMessage(message: Message, active: boolean) {
     const queueList = await list(message.id)
     if (!queueList.success)
-        return
+        return console.error(`messageHelpers.ts updateLoungeQueueMessage() queueList failed ${queueList.message}`)
 
     const queue = await fetchQueueFromDb(message.id)
     const endTime = queue?.endTime || undefined

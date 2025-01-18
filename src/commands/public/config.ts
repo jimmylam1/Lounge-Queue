@@ -1,4 +1,4 @@
-import { ApplicationCommandData, CommandInteraction, Constants, TextChannel } from "discord.js";
+import { ApplicationCommandData, ApplicationCommandOptionChoiceData, CommandInteraction, Constants, TextChannel } from "discord.js";
 import { slashCommandEvent } from "../../common/discordEvents";
 import { reply } from "../../common/util";
 import { dbConnect } from "../../common/db/connect";
@@ -10,12 +10,12 @@ export const data: ApplicationCommandData = {
     options: [
         {
             name: "list",
-            description: "View server configuration settings. Requires Manage Roles permission",
+            description: "View server configuration settings",
             type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
         },
         {
             name: "queue-staff",
-            description: "Add or remove Lounge Queue staff roles. Requires Manage Roles permission",
+            description: "Add or remove Lounge Queue staff roles",
             type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND_GROUP,
             options: [
                 {
@@ -105,7 +105,40 @@ export const data: ApplicationCommandData = {
             description: "Remove the /sub command configurations to disable it",
             type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
         },
+        {
+            name: "add-extension",
+            description: "Allow the bot to wait a few more minutes before making rooms if +1",
+            type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
+            options: [
+                {
+                    name: "max-minutes",
+                    description: "The maximum extension time if nobody joins or drops. Ex: 2",
+                    required: true,
+                    type: Constants.ApplicationCommandOptionTypes.INTEGER,
+                    choices: getMaxMinutesChoices()
+                },
+                {
+                    name: "role-to-ping",
+                    description: "The role to ping along with the +1 message. Ex: @tags",
+                    required: true,
+                    type: Constants.ApplicationCommandOptionTypes.ROLE
+                },
+            ]
+        },
+        {
+            name: "remove-extension",
+            description: "Remove extension settings to disable queue extensions",
+            type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
+        },
     ]
+}
+
+function getMaxMinutesChoices() {
+    const res: ApplicationCommandOptionChoiceData[] = []
+    for (let i = 0; i < 5; i++) {
+        res.push({name: `${i+1}`, value: i+1})
+    }
+    return res
 }
 
 slashCommandEvent.on(data.name, async (interaction) => {
@@ -125,6 +158,10 @@ slashCommandEvent.on(data.name, async (interaction) => {
         handleSubConfig(interaction).catch(e => console.error(`config.ts handleSubConfig()`, e))
     else if (interaction.options.getSubcommand() == "sub-remove")
         handleSubRemove(interaction).catch(e => console.error(`config.ts handleSubRemove()`, e))
+    else if (interaction.options.getSubcommand() == "add-extension")
+        handleAddExtension(interaction).catch(e => console.error(`config.ts handleAddExtension()`, e))
+    else if (interaction.options.getSubcommand() == "remove-extension")
+        handleRemoveExtension(interaction).catch(e => console.error(`config.ts handleRemoveExtension()`, e))
 })
 
 async function handleList(interaction: CommandInteraction) {
@@ -229,17 +266,17 @@ async function handleSubConfig(interaction: CommandInteraction) {
     if (res?.changes)
         await reply(interaction, `Successfully updated the /sub configuration`)
     else
-        await reply(interaction, "Something went wrong updated the /sub configuration")
+        await reply(interaction, "Something went wrong updating the /sub configuration")
 }
 
 async function handleSubRemove(interaction: CommandInteraction) {
     const query = `UPDATE config SET
-    subChannelId = null, 
-    subPingRoleId = null, 
-    subMmrDiff = null, 
-    subMinutes = null, 
-    subStaffOnly = null
-    WHERE guildId = ?`
+        subChannelId = null, 
+        subPingRoleId = null, 
+        subMmrDiff = null, 
+        subMinutes = null, 
+        subStaffOnly = null
+        WHERE guildId = ?`
 
     const res = await dbConnect(async db => {
         return await db.execute(query, [interaction.guild!.id])
@@ -249,4 +286,49 @@ async function handleSubRemove(interaction: CommandInteraction) {
         await reply(interaction, `Successfully removed the /sub configuration`)
     else
         await reply(interaction, "Something went wrong removing the /sub configuration")
+}
+
+async function handleAddExtension(interaction: CommandInteraction) {
+    const minutes = interaction.options.getInteger("max-minutes")
+    const role = interaction.options.getRole("role-to-ping")
+
+    if (minutes === null || role === null) {
+        console.error(`config.ts handleAddExtension() an option is null`)
+        return reply(interaction, `There was a problem reading the command arguments`)
+    }
+
+    await interaction.deferReply()
+
+    const query = `INSERT INTO config 
+        (guildId, queuePlusOneExtensionMinutes, queuePlusOnePingRoleId) 
+        VALUES (?, ?, ?) 
+        ON CONFLICT (guildId) DO 
+        UPDATE SET 
+        queuePlusOneExtensionMinutes = excluded.queuePlusOneExtensionMinutes, 
+        queuePlusOnePingRoleId = excluded.queuePlusOnePingRoleId
+        `
+    const res = await dbConnect(async db => {
+        return await db.execute(query, [interaction.guild!.id, minutes, role.id])
+    }).catch(e => console.error(`config.ts handleAddExtension() ${e}`))
+
+    if (res?.changes)
+        await reply(interaction, `Successfully updated the queue extension configuration`)
+    else
+        await reply(interaction, "Something went wrong updating the queue extension configuration")
+}
+
+async function handleRemoveExtension(interaction: CommandInteraction) {
+    const query = `UPDATE config SET
+        queuePlusOneExtensionMinutes = null, 
+        queuePlusOnePingRoleId = null 
+        WHERE guildId = ?`
+
+    const res = await dbConnect(async db => {
+        return await db.execute(query, [interaction.guild!.id])
+    }).catch(e => console.error(`config.ts handleRemoveExtension() ${e}`))
+
+    if (res?.changes)
+        await reply(interaction, `Successfully removed the queue extension configuration`)
+    else
+        await reply(interaction, "Something went wrong removing the queue extension configuration")
 }

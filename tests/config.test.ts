@@ -17,6 +17,8 @@ describe('config tests', () => {
                      + `- queue-staff: None\n`
                      + `- join-channel: None\n`
                      + `- /sub config: None\n`
+                     + `- queue extension: None\n`
+
                      + '\n'
                      + 'The config options below can only be set by the bot developer\n'
                      + `- min-full-rooms: 1\n`
@@ -32,6 +34,7 @@ describe('config tests', () => {
                  + `- queue-staff: <@&11111>\n`
                  + `- join-channel: None\n`
                  + `- /sub config: None\n`
+                 + `- queue extension: None\n`
                  + '\n'
                  + 'The config options below can only be set by the bot developer\n'
                  + `- min-full-rooms: 1\n`
@@ -47,6 +50,7 @@ describe('config tests', () => {
                  + `- queue-staff: <@&11111>, <@&22222>\n`
                  + `- join-channel: None\n`
                  + `- /sub config: None\n`
+                 + `- queue extension: None\n`
                  + '\n'
                  + 'The config options below can only be set by the bot developer\n'
                  + `- min-full-rooms: 1\n`

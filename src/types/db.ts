@@ -17,6 +17,8 @@ export type Config = {
     subMmrDiff: number | null;
     subMinutes: number | null;
     subStaffOnly: boolean | null;
+    queuePlusOneExtensionMinutes: number | null;
+    queuePlusOnePingRoleId: string | null;
 }
 
 export type StaffRoles = {
@@ -35,6 +37,7 @@ export type LoungeQueue = {
     cancelled: boolean | null;
     madeRooms: boolean | null;
     format: FormatOption | null; // null requires poll when queue closes
+    extended: boolean | null; // used if queue is extended due to +1 players
 }
 
 export type Players = {

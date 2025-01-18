@@ -5,7 +5,9 @@ const config = `CREATE TABLE IF NOT EXISTS config(
     subPingRoleId TEXT,
     subMmrDiff INTEGER,
     subMinutes INTEGER,
-    subStaffOnly BOOLEAN
+    subStaffOnly BOOLEAN,
+    queuePlusOneExtensionMinutes INTEGER,
+    queuePlusOnePingRoleId TEXT
 ) WITHOUT ROWID`
 
 const staffRoles = `CREATE TABLE IF NOT EXISTS staffRoles(
@@ -24,7 +26,8 @@ const loungeQueue = `CREATE TABLE IF NOT EXISTS loungeQueue(
     active BOOLEAN NOT NULL,
     cancelled BOOLEAN,
     madeRooms BOOLEAN,
-    format TEXT
+    format TEXT,
+    extended BOOLEAN
 )`
 
 const players = `CREATE TABLE IF NOT EXISTS players(

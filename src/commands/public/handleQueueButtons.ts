@@ -1,11 +1,12 @@
 import { ButtonInteraction, GuildMember, Message } from "discord.js"
 import { buttonEvent } from "../../common/discordEvents"
-import { addPlayer, getRooms, removePlayer } from "../../common/core"
+import { addPlayer, closeQueue, getRooms, removePlayer } from "../../common/core"
 import { guildConfig } from "../../common/data/guildConfig"
 import { replyToButton, reply } from "../../common/util"
 import { Player } from "../../types/player"
-import { updateLoungeQueueMessage } from "../../common/messageHelpers"
+import { makeRooms, updateLoungeQueueMessage } from "../../common/messageHelpers"
 import { Cooldown } from "../../common/cooldown"
+import { fetchQueueFromDb } from "../../common/dbHelpers"
 
 const buttonCooldown = new Cooldown(15)
 buttonEvent.on('handleQueueButtons', async (interaction) => {
@@ -38,8 +39,15 @@ async function handleJoin(interaction: ButtonInteraction) {
         mmr
     }
     const res = await addPlayer(player, interaction.message.id)
-    if (res.success && interaction.message instanceof Message)
+    if (res.success && interaction.message instanceof Message) {
         await updateLoungeQueueMessage(interaction.message, true)
+        if (await isExtended(interaction.message.id)) {
+            await closeQueue(interaction.message.id)
+            await updateLoungeQueueMessage(interaction.message, false)
+            await makeRooms(interaction.message)
+            return
+        }
+    }
     else {
         if (res.message === 'Unable to find the associated Lounge Queue' && interaction.message instanceof Message)
             await removeButtonsFromMessage(interaction.message).catch(e => console.error(`handleQueueButtons.ts handleJoin disableButtons ${e}`))
@@ -54,8 +62,15 @@ async function handleDrop(interaction: ButtonInteraction) {
     await interaction.deferUpdate()
     
     const res = await removePlayer(interaction.user.id, interaction.message.id)
-    if (res.success && interaction.message instanceof Message)
+    if (res.success && interaction.message instanceof Message) {
         await updateLoungeQueueMessage(interaction.message, true)
+        if (await isExtended(interaction.message.id)) {
+            await closeQueue(interaction.message.id)
+            await updateLoungeQueueMessage(interaction.message, false)
+            await makeRooms(interaction.message)
+            return
+        }
+    }
     else {
         if (res.message === 'Unable to find the associated Lounge Queue' && interaction.message instanceof Message)
             await removeButtonsFromMessage(interaction.message).catch(e => console.error(`handleQueueButtons.ts handleDrop disableButtons ${e}`))
@@ -103,4 +118,12 @@ async function removeButtonsFromMessage(message: Message) {
     const embed = message.embeds[0]
     embed.color = null
     await message.edit({embeds: [embed], components: []})
+}
+
+async function isExtended(messageId: string) {
+    const queue = await fetchQueueFromDb(messageId)
+    if (!queue)
+        throw new Error(`handleQueueButtons.ts isExtended() queue is null`)
+
+    return queue.extended || false
 }
