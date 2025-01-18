@@ -222,7 +222,7 @@ async function sendSubMessage(player: Players, config: Config, channel: TextChan
     const maxMmr = player.mmr + config.subMmrDiff!
     const expires = Math.floor((Date.now() + 60000*config.subMinutes!)/1000)
 
-    let text = `<@&${config.subPingRoleId}> - ${roomName} is looking for a sub with MMR ${minMmr} - ${maxMmr} for ${racesLeft} races.\n`
+    let text = `<@&${config.subPingRoleId}> - LQ ${roomName} is looking for a sub with MMR between ${minMmr} - ${maxMmr} for ${racesLeft} races.\n`
              + `-# Expires <t:${expires}:R>`
 
     const button = new MessageButton()
