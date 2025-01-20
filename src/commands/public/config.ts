@@ -240,6 +240,9 @@ async function handleSubConfig(interaction: CommandInteraction) {
         return reply(interaction, `There was a problem reading the command arguments`)
     }
 
+    if (!(channel instanceof TextChannel))
+        return reply(interaction, `The channel needs to be a text channel`)
+
     await interaction.deferReply()
 
     if (maxMmrDiff <= 0)
