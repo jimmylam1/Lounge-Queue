@@ -1,9 +1,9 @@
 import { ApplicationCommandData, ApplicationCommandOptionChoiceData, AutocompleteInteraction, ButtonInteraction, Client, CommandInteraction, Constants, Guild, GuildMember, MessageActionRow, MessageButton, TextChannel, ThreadChannel } from "discord.js";
 import { autocompleteEvent, buttonEvent, slashCommandEvent } from "../../common/discordEvents";
-import { findNext10Seconds, reply, replyToButton } from "../../common/util";
+import { findNext10Seconds, findRoomMmr, reply, replyToButton } from "../../common/util";
 import { dbConnect } from "../../common/db/connect";
 import { Config, Players, Subs } from "../../types/db";
-import { getConfig, getRoom, getSubRowFromDb, removeSubRowFromDb } from "../../common/dbHelpers";
+import { getConfig, getPlayersInRoom, getRoom, getSubRowFromDb, removeSubRowFromDb } from "../../common/dbHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { guildConfig } from "../../common/data/guildConfig";
 import { Player } from "../../types/player";
@@ -81,6 +81,7 @@ async function handleInit(interaction: CommandInteraction) {
         return reply(interaction, {content: 'Missing one of the required command options', ephemeral: true})
     
     await interaction.deferReply()
+    console.log(`${interaction.member.displayName} used /sub for ${playerName}`)
 
     const vars = await getInitVars(interaction, playerName).catch(e => console.error(`sub.ts getInitVars() failed`, e))
     if (!vars)
@@ -91,7 +92,7 @@ async function handleInit(interaction: CommandInteraction) {
     // send the sub message to the join channel, then update db with the message id
     // if error, remove the row from the db
     try {
-        const subMessage = await sendSubMessage(player, config, channel, interaction.channel.name, racesLeft, res.lastID)
+        const subMessage = await sendSubMessage(config, channel, interaction.channel.name, racesLeft, res.lastID)
         await addLookingMessageIdToDb(res.lastID, subMessage.id)
         const {content, componentRow} = await getReplyMessageComponents(config, interaction.user.id, res.lastID)
         const message = await interaction.editReply({content, components: [componentRow]})
@@ -197,8 +198,10 @@ async function playerInRoom(playerName: string, channelId: string) {
 
 async function addSubToDb(queue: number, player: Players, config: Config, roomChannelId: string, lookingChannelId: string) {
     const playerName = player.name
-    const minMmr = Math.max(0, player.mmr - config.subMmrDiff!)
-    const maxMmr = player.mmr + config.subMmrDiff!
+    const players = await getPlayersInRoom(roomChannelId)
+    const roomMmmr = findRoomMmr(players.map(i => [i]))
+    const minMmr = Math.max(0, roomMmmr - config.subMmrDiff!)
+    const maxMmr = roomMmmr + config.subMmrDiff!
     const startTime = Date.now()
     const expires = findNext10Seconds().getTime() + 60000*config.subMinutes! // 10 seconds works better for interval
     const query = `INSERT INTO subs 
@@ -217,12 +220,13 @@ async function alreadyLookingForSub(playerName: string, roomChannelId: string) {
     return !!res
 }
 
-async function sendSubMessage(player: Players, config: Config, channel: TextChannel, roomName: string, racesLeft: number, subRowId: number) {
-    const minMmr = Math.max(0, player.mmr - config.subMmrDiff!)
-    const maxMmr = player.mmr + config.subMmrDiff!
-    const expires = Math.floor((Date.now() + 60000*config.subMinutes!)/1000)
+async function sendSubMessage(config: Config, channel: TextChannel, roomName: string, racesLeft: number, subRowId: number) {
+    const sub = await getSubRowFromDb(subRowId)
+    if (!sub)
+        throw new Error(`sub.ts sendSubMessage() getSubRowFromDb returned null`)
+    const expires = Math.floor(sub.expires/1000)
 
-    let text = `<@&${config.subPingRoleId}> - LQ ${roomName} is looking for a sub with MMR between ${minMmr} - ${maxMmr} for ${racesLeft} races.\n`
+    let text = `<@&${config.subPingRoleId}> - LQ ${roomName} is looking for a sub with MMR between ${sub.minMmr} - ${sub.maxMmr} for ${racesLeft} races.\n`
              + `-# Expires <t:${expires}:R>`
 
     const button = new MessageButton()

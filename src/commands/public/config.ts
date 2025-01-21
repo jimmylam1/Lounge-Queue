@@ -78,7 +78,7 @@ export const data: ApplicationCommandData = {
                 },
                 {
                     name: "max-mmr-diff",
-                    description: "The maximum MMR difference allowed. Ex: 500",
+                    description: "The maximum average room MMR difference allowed. Ex: 500",
                     required: true,
                     type: Constants.ApplicationCommandOptionTypes.INTEGER,
                 },
