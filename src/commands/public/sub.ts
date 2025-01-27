@@ -322,7 +322,7 @@ async function addSubChecks(interaction: ButtonInteraction, rowId: number) {
 
 async function isInQueue(queueId: number, userId: string) {
     const res = await dbConnect(async db => {
-        return await db.fetchOne<Player>("SELECT * FROM players WHERE queue = ? AND discordId = ?", [queueId, userId])
+        return await db.fetchOne<Player>("SELECT * FROM players WHERE queue = ? AND discordId = ? AND roomChannelId IS NOT NULL", [queueId, userId])
     })
     return !!res
 }
