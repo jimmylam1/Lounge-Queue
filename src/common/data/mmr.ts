@@ -22,5 +22,7 @@ export async function mmrMktLounge(playerName: string) {
         await fetchApi().catch(e => console.error(`mmr.ts mmrMktLounge() fetchApi() failed: ${e}`))
         lastMktFetched = Date.now()
     }
-    return mktCache[playerName.toLowerCase()] || null
+    if (mktCache[playerName.toLowerCase()] !== undefined)
+        return mktCache[playerName.toLowerCase()]
+    return null
 }
