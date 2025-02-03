@@ -3,18 +3,12 @@ import { closePolls } from "../interval/closePolls";
 import { closeQueues } from "../interval/closeQueues";
 import { deleteOldRowsAndRooms } from "../interval/deleteRowsAndRooms";
 import { openExampleLoungeQueue } from "../interval/exampleOpenLoungeQueue";
-import { findNext10Seconds, findNextHour } from "../common/util";
+import { findNext10Seconds, findNextHour, sleep } from "../common/util";
 import { openScheduledQueues } from "../interval/schedule";
 import { cancelSubs } from "../interval/cancelSub";
 
 export function runInterval(client: Client) {
-    // run every 10 seconds, including on the minute
-    setTimeout(() => {
-        mainIntervalHandler(client)
-        setInterval(() => {
-            mainIntervalHandler(client)
-        }, 10000);  
-    }, findNext10Seconds().getTime() - Date.now());
+    mainIntervalHandler(client)
 
     // check to delete old db rows and rooms once an hour
     setTimeout(() => {
@@ -29,25 +23,30 @@ export function runInterval(client: Client) {
 var pollsIsRunning = false
 var queuesIsRunning = false
 var subsIsRunning = false
-function mainIntervalHandler(client: Client) {
-    // check for polls that should close
-    if (!pollsIsRunning) {
-        pollsIsRunning = true
-        closePolls(client)
-            .catch(e => console.error(`interval.ts closePolls() failed ${e}`))
-            .finally(() => pollsIsRunning = false)
-    }
-    // check for queues that should close as well as any server open intervals
-    if (!queuesIsRunning) {
-        closeAndOpenQueues(client)
-            .catch(e => console.error(`interval.ts closeAndOpenQueues() failed ${e}`))
-            .finally(() => queuesIsRunning = false)
-    }
-    // check for sub messages to cancel
-    if (!subsIsRunning) {
-        cancelSubs(client)
-            .catch(e => console.error(`interval.ts cancelSubs() failed ${e}`))
-            .finally(() => subsIsRunning = false)
+async function mainIntervalHandler(client: Client) {
+    // run every 10 seconds.
+    // use while loop instead of setInterval to better handle drift over time, running on :10 is important
+    while (true) {
+        await sleep(findNext10Seconds().getTime() - Date.now())
+        // check for polls that should close
+        if (!pollsIsRunning) {
+            pollsIsRunning = true
+            closePolls(client)
+                .catch(e => console.error(`interval.ts closePolls() failed ${e}`))
+                .finally(() => pollsIsRunning = false)
+        }
+        // check for queues that should close as well as any server open intervals
+        if (!queuesIsRunning) {
+            closeAndOpenQueues(client)
+                .catch(e => console.error(`interval.ts closeAndOpenQueues() failed ${e}`))
+                .finally(() => queuesIsRunning = false)
+        }
+        // check for sub messages to cancel
+        if (!subsIsRunning) {
+            cancelSubs(client)
+                .catch(e => console.error(`interval.ts cancelSubs() failed ${e}`))
+                .finally(() => subsIsRunning = false)
+        }
     }
 }
 
