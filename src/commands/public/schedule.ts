@@ -1,4 +1,4 @@
-import { ApplicationCommandData, AutocompleteInteraction, CommandInteraction, Constants, GuildMember } from "discord.js";
+import { ApplicationCommandData, AutocompleteInteraction, CommandInteraction, Constants, GuildMember, MessageEmbedOptions } from "discord.js";
 import { autoCloseChoices } from "../../common/messageHelpers";
 import { autocompleteEvent, slashCommandEvent } from "../../common/discordEvents";
 import { guildConfig } from "../../common/data/guildConfig";
@@ -166,7 +166,11 @@ async function handleList(interaction: CommandInteraction) {
     await interaction.deferReply()
 
     const text = await listSchedules(interaction.guild!.id) || 'There are no schedules to list'
-    reply(interaction, text)
+    const embed: MessageEmbedOptions = {
+        title: 'Queue Schedule',
+        description: text
+    }
+    reply(interaction, {embeds: [embed]})
 }
 
 async function addSchedule(guildId: string, openTime: number, closeTime: number, format: string | null) {
@@ -186,12 +190,18 @@ async function listSchedules(guildId: string) {
         return await db.fetchAll<Schedule>("SELECT * FROM schedule WHERE guildId = ? ORDER BY startTime ASC", [guildId])
     })
     let text = ''
+    let extended = false
     for (let i = 0; i < schedules.length; i++) {
         const s = schedules[i]
         const startTime = Math.floor(s.startTime/1000)
         const endTime = Math.floor(s.endTime/1000)
-        text += `\`#${i+1}\` **${s.format || 'Poll'}**: <t:${startTime}:f> - <t:${startTime}:R> - Start at <t:${endTime}:t>\n`
+        if (text.length <= 4000)
+            text += `\`#${i+1}\` **${s.format || 'Poll'}**: <t:${startTime}:f> - <t:${startTime}:R> - Start at <t:${endTime}:t>\n`
+        else
+            extended = true
     }
+    if (extended)
+        text += "...\n"
     return text
 }
 
