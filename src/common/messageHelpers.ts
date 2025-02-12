@@ -167,6 +167,9 @@ export async function makeRooms(message: Message) {
         })
 
         for (let botId of guildConfig[message.guild.id].botAccess) {
+            const bot = await message.guild.members.fetch(botId).catch(e => console.error(`messageHelpers.ts makeRooms failed to fetch bot ${botId} ${e}`))
+            if (!bot || !message.channel.permissionsFor(bot).has('VIEW_CHANNEL'))
+                continue
             await channel.members.add(botId).catch(e => console.error(`makeRooms() failed to add bot ${botId} to room ${channel.id} ${e}`))
         }
 
