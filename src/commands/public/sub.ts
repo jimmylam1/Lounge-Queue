@@ -3,7 +3,7 @@ import { autocompleteEvent, buttonEvent, slashCommandEvent } from "../../common/
 import { findNext10Seconds, findRoomMmr, reply, replyToButton } from "../../common/util";
 import { dbConnect } from "../../common/db/connect";
 import { Config, Players, Subs } from "../../types/db";
-import { getConfig, getPlayersInRoom, getRoom, getSubRowFromDb, removeSubRowFromDb } from "../../common/dbHelpers";
+import { getConfig, getPlayersInRoom, getRoom, getSubRowFromDb, queueRoomCount, removeSubRowFromDb } from "../../common/dbHelpers";
 import { canManageLoungeQueue } from "../../common/permissions";
 import { guildConfig } from "../../common/data/guildConfig";
 import { Player } from "../../types/player";
@@ -225,8 +225,10 @@ async function sendSubMessage(config: Config, channel: TextChannel, roomName: st
     if (!sub)
         throw new Error(`sub.ts sendSubMessage() getSubRowFromDb returned null`)
     const expires = Math.floor(sub.expires/1000)
+    const roomCount = await queueRoomCount(sub.queue)
 
-    let text = `<@&${config.subPingRoleId}> - LQ ${roomName} is looking for a sub with MMR between ${sub.minMmr} - ${sub.maxMmr} for ${racesLeft} races.\n`
+    let text = `<@&${config.subPingRoleId}> - LQ ${roomName} is looking for a sub `
+             + (roomCount === 1 ? 'with any MMR.\n' : `with MMR between ${sub.minMmr} - ${sub.maxMmr} for ${racesLeft} races.\n`)
              + `-# Expires <t:${expires}:R>`
 
     const button = new MessageButton()
@@ -314,7 +316,9 @@ async function addSubChecks(interaction: ButtonInteraction, rowId: number) {
 
     if (await isInQueue(sub.queue, interaction.user.id))
         return replyToButton(interaction, {content: `You cannot sub because you are already playing in the queue`, ephemeral: true})
-    if (mmr < sub.minMmr || mmr > sub.maxMmr)
+
+    const roomCount = await queueRoomCount(sub.queue)
+    if (roomCount !== 1 && (mmr < sub.minMmr || mmr > sub.maxMmr))
         return replyToButton(interaction, {content: `Your ${mmr} MMR is outside the range ${sub.minMmr} - ${sub.maxMmr}`, ephemeral: true})
 
     return sub

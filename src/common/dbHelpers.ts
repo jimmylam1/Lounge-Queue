@@ -55,3 +55,14 @@ export async function removeSubRowFromDb(rowId: number) {
         return await db.execute(`DELETE FROM subs WHERE id = ?`, [rowId])
     })
 }
+
+export async function queueRoomCount(queueId: number) {
+    return await dbConnect(async db => {
+        const countData = await db.fetchOne<{count: number}>(`SELECT COUNT(*) AS count FROM rooms WHERE queue = ?`, [queueId])
+        if (!countData) {
+            console.error(`dbHelpers.ts queueRoomCount() countData is undefined: ${countData}`)
+            return 0
+        }
+        return countData.count
+    })
+}
