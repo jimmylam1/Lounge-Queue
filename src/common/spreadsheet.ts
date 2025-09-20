@@ -53,5 +53,3 @@ export async function fetchSchedulesFromSheet(guildId: string) {
         errorText: errors.join("\n")
     }
 }
-
-fetchSchedulesFromSheet('761672339716046868')
