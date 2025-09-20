@@ -4,6 +4,8 @@ import { Routes } from "discord-api-types/v10";
 import { commandData } from "../managers/publicCommands";
 dotenv.config();
 
+// If there are errors, make sure node is v20
+
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN!);
 const commandNames = commandData.map(i => "    /" + i.name)
 commandNames.sort()
