@@ -34,11 +34,13 @@ export async function fetchSchedulesFromSheet(guildId: string) {
     const validFormats = ['Poll', 'FFA', '2v2', '4v4']
     let errors: string[] = []
     for (let i = 1; i < lines.length; i++) {
-        const [openTime, autoCloseMinutes, format] = lines[i].split(",")
+        let [openTime, autoCloseMinutes, format] = lines[i].split(",")
         if (!validMinutes.includes(autoCloseMinutes))
             errors.push(`Invalid minute "${autoCloseMinutes}" in row ${i+1}`)
         if (!validFormats.includes(format))
             errors.push(`Invalid format "${format}" in row ${i+1}`)
+        if (format === 'Poll')
+            format = ''
         data.push({
             row: i+1, 
             openTimeText: openTime, 
