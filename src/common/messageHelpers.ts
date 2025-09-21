@@ -152,7 +152,8 @@ export async function makeRooms(message: Message) {
 
     if (roomInfo.rooms.length < guildConfig[message.guild.id].minFullRooms) {
         await markQueueMadeRooms(message.id)
-        await message.reply(`This queue is cancelled because it needs a minimum of ${guildConfig[message.guild.id].minFullRooms} full rooms.`)
+        const rooms = guildConfig[message.guild.id].minFullRooms > 1 ? 'rooms' : 'room'
+        await message.reply(`This queue is cancelled because it needs a minimum of ${guildConfig[message.guild.id].minFullRooms} full ${rooms}.`)
         return
     }
 
