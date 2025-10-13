@@ -138,7 +138,7 @@ describe('loungeQueueTests', () => {
         // 0 players
         let expected = "`Queue List`\n"
                      + "\n"
-                     + "(+8 players for 1 full rooms)"
+                     + "(+8 players for 1 full room)"
         await expect(list('0')).resolves.toHaveProperty('message', expected)
 
         // 1 player
@@ -147,7 +147,7 @@ describe('loungeQueueTests', () => {
         + "\n"
         + "1. Player 1 (750 MMR)\n"
         + "\n"
-        + "(+7 players for 1 full rooms)"
+        + "(+7 players for 1 full room)"
         await expect(list('0')).resolves.toHaveProperty('message', expected)
 
         // 7 players
@@ -164,7 +164,7 @@ describe('loungeQueueTests', () => {
         + "6. Player 6 (2000 MMR)\n"
         + "7. Player 7 (2250 MMR)\n"
         + "\n"
-        + "(+1 players for 1 full rooms)"
+        + "(+1 players for 1 full room)"
         await expect(list('0')).resolves.toHaveProperty('message', expected)
 
         // 8 players

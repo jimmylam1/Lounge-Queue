@@ -12,7 +12,7 @@ import { SuccessStatus } from "../types/loungeQueue";
 
 export const blankQueueList = "`Queue List`\n"
                             + "\n"
-                            + "(+8 players for 1 full rooms)"
+                            + "(+8 players for 1 full room)"
 
 export function queueMessageEmbed(queueList: string, active: boolean, format?: FormatOption, closeTime?: number) {
     let footer = "A poll will be created in each room once this queue closes."

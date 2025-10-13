@@ -74,7 +74,9 @@ export async function list(messageId: string): Promise<SuccessStatus> {
         if (players.length % config.roomSize !== 0 || players.length === 0) {
             if (players.length)
                 text += "\n"
-            text += `(+${playersNeededForFullRooms(players.length, config.roomSize)} players for ${currentFullRoomsCount(players.length, config.roomSize) + 1} full rooms)`;
+            const fullRoomsCount = currentFullRoomsCount(players.length, config.roomSize) + 1
+            const rooms = fullRoomsCount > 1 ? "rooms" : "room"
+            text += `(+${playersNeededForFullRooms(players.length, config.roomSize)} players for ${fullRoomsCount} full ${rooms})`;
         }
         return {success: true, message: text};
     })
