@@ -23,6 +23,7 @@ buttonEvent.on('handleQueueButtons', async (interaction) => {
         handlePreview(interaction).catch(e => console.error(`handleQueueButtons.ts handlePreview()`, e))
 })
 
+const closedQueues: Set<string> = new Set()
 async function handleJoin(interaction: ButtonInteraction) {
     if (!(interaction.member instanceof GuildMember))
         return
@@ -41,7 +42,12 @@ async function handleJoin(interaction: ButtonInteraction) {
     const res = await addPlayer(player, interaction.message.id)
     if (res.success && interaction.message instanceof Message) {
         await updateLoungeQueueMessage(interaction.message, true)
-        if (await isExtended(interaction.message.id)) {
+        if ((await isExtended(interaction.message.id))) {
+            // handle race condition if 2 people press button at the same time
+            if (closedQueues.has(interaction.message.id))
+                return
+            closedQueues.add(interaction.message.id)
+            
             await closeQueue(interaction.message.id)
             await updateLoungeQueueMessage(interaction.message, false)
             await makeRooms(interaction.message)
