@@ -72,6 +72,29 @@ export function findNext10Seconds() {
 }
 
 /**
+ * Splits the text into an array of strings where each string is at most maxChars characters long.
+ * @param text The string to split
+ * @param splitChar The character to split the text with
+ * @param maxChars The max number of characters per element in the return array
+ */
+export function splitText(text: string, splitChar: string, maxChars: number) {
+    const retVal: string[] = []
+    const splitText = text.split(splitChar)
+    let currentText = ''
+    for (const t of splitText) {
+        if (currentText.length + t.length + splitChar.length > maxChars) {
+            retVal.push(currentText)
+            currentText = ''
+        }
+        currentText += t + splitChar
+    }
+    if (currentText.length > 0) {
+        retVal.push(currentText)
+    }
+    return retVal
+}
+
+/**
  * Reply to an interaction, whether a slash command or a button press. If button, will update message if function called interaction.deferUpdate()
  */
 export async function reply(interaction: CommandInteraction | ButtonInteraction, interactionOptions: string | InteractionEditReplyOptions | InteractionReplyOptions, options?: ReplyOptions) {

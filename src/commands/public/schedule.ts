@@ -1,9 +1,9 @@
-import { ApplicationCommandData, AutocompleteInteraction, ButtonInteraction, CommandInteraction, Constants, GuildMember, MessageActionRow, MessageButton, MessageEmbedOptions } from "discord.js";
+import { ApplicationCommandData, AutocompleteInteraction, ButtonInteraction, CommandInteraction, Constants, GuildMember, InteractionReplyOptions, MessageActionRow, MessageButton, MessageEmbedOptions } from "discord.js";
 import { autoCloseChoices } from "../../common/messageHelpers";
 import { autocompleteEvent, buttonEvent, slashCommandEvent } from "../../common/discordEvents";
 import { guildConfig } from "../../common/data/guildConfig";
 import { canManageLoungeQueue } from "../../common/permissions";
-import { reply, replyToButton } from "../../common/util";
+import { reply, replyToButton, splitText } from "../../common/util";
 import { dbConnect } from "../../common/db/connect";
 import * as chrono from 'chrono-node'
 import { getConfig } from "../../common/dbHelpers";
@@ -187,7 +187,7 @@ async function handleAddFromSpreadsheet(interaction: CommandInteraction) {
         })
     }
     if (errors.length) {
-        return reply(interaction, errors.join("\n"))
+        return reply(interaction, errors.join("\n").slice(0, 2000))
     }
     const lines: string[] = []
     for (let i = 0; i < scheduleRows.length; i++) {
@@ -195,7 +195,7 @@ async function handleAddFromSpreadsheet(interaction: CommandInteraction) {
         const endTime = openTimeTimestamp + 60000*autoCloseMinutes
         const start = Math.floor(openTimeTimestamp / 1000)
         const end = Math.floor(endTime / 1000)
-        lines.push(`${i+1}. **${format}**: <t:${start}:f> - <t:${start}:R> - Start at <t:${end}:t>`)
+        lines.push(`${i+1}. **${format || 'Poll'}**: <t:${start}:f> - <t:${start}:R> - Start at <t:${end}:t>`)
     }
     addFromSpreadsheetCache[interaction.id] = scheduleRows
 
@@ -206,7 +206,18 @@ async function handleAddFromSpreadsheet(interaction: CommandInteraction) {
     const componentRow = new MessageActionRow()
         .addComponents(button)
 
-    return reply(interaction, {content: `If the dates are correct, push the button below to add them\n\n${lines.join("\n")}`, components: [componentRow]})
+    const texts = splitText(`If the dates are correct, push the button below to add them\n\n${lines.join("\n")}`, "\n", 4000)
+    for (let i = 0; i < texts.length; i++) {
+        const payload: InteractionReplyOptions = {embeds: [
+            {description: texts[i]}
+        ]}
+        if (i === texts.length - 1)
+            payload.components = [componentRow]
+        if (i === 0)
+            await reply(interaction, payload)
+        else 
+            await interaction.followUp({...payload, ephemeral: true}).catch(e => console.error(`schedule.ts followup failed: ${e}`))
+    }
 }
 
 async function handleButtonAdd(interaction: ButtonInteraction) {
@@ -265,9 +276,9 @@ async function handleRemove(interaction: CommandInteraction) {
         return reply(interaction, `Unable to find the schedule. Make sure you include a timezone, like pt or utc`)
     }
 
-    let text = "Successfully removed the scheduled queue.\n\nQueue list"
-    text += await listSchedules(interaction.guild!.id)
-    reply(interaction, text)
+    let text = "Successfully removed the scheduled queue.\n\nQueue list\n"
+    text += await listSchedules(interaction.guild!.id, 4000)
+    reply(interaction, {embeds: [{description: text}]})
 }
 
 async function handleList(interaction: CommandInteraction) {
@@ -280,12 +291,19 @@ async function handleList(interaction: CommandInteraction) {
 
     await interaction.deferReply()
 
-    const text = await listSchedules(interaction.guild!.id) || 'There are no schedules to list'
-    const embed: MessageEmbedOptions = {
-        title: 'Queue Schedule',
-        description: text
+    const text = await listSchedules(interaction.guild!.id, 20000) || 'There are no schedules to list'
+    const texts = splitText(text, "\n", 4000)
+    for (let i = 0; i < texts.length; i++) {
+        const embed: MessageEmbedOptions = {
+            title: i === 0 ? 'Queue Schedule' : undefined,
+            description: texts[i]
+        }
+        
+        if (i === 0)
+            await reply(interaction, {embeds: [embed]})
+        else
+            await interaction.channel.send({embeds: [embed]}).catch(e => console.error(`schedule.ts handleList() channel.send failed: ${e}`))
     }
-    reply(interaction, {embeds: [embed]})
 }
 
 async function addSchedule(guildId: string, openTime: number, closeTime: number, format: string | null) {
@@ -300,7 +318,7 @@ async function removeQueueSchedule(guildId: string, startTime: number) {
     })  
 }
 
-async function listSchedules(guildId: string) {
+async function listSchedules(guildId: string, charLimit=4000) {
     const schedules = await dbConnect(async db => {
         return await db.fetchAll<Schedule>("SELECT * FROM schedule WHERE guildId = ? ORDER BY startTime ASC", [guildId])
     })
@@ -310,7 +328,7 @@ async function listSchedules(guildId: string) {
         const s = schedules[i]
         const startTime = Math.floor(s.startTime/1000)
         const endTime = Math.floor(s.endTime/1000)
-        if (text.length <= 4000)
+        if (text.length <= charLimit)
             text += `\`#${i+1}\` **${s.format || 'Poll'}**: <t:${startTime}:f> - <t:${startTime}:R> - Start at <t:${endTime}:t>\n`
         else
             extended = true

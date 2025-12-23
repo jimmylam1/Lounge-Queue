@@ -32,15 +32,20 @@ export async function fetchSchedulesFromSheet(guildId: string) {
     const lines = text.split("\n")
     const validMinutes = ['30', '45', '60', '75', '90']
     const validFormats = ['Poll', 'FFA', '2v2', '4v4']
+    const openTimes = new Set<string>()
     let errors: string[] = []
     for (let i = 1; i < lines.length; i++) {
         let [openTime, autoCloseMinutes, format] = lines[i].split(",")
         if (!validMinutes.includes(autoCloseMinutes))
-            errors.push(`Invalid minute "${autoCloseMinutes}" in row ${i+1}`)
+            errors.push(autoCloseMinutes ? `Invalid minute "${autoCloseMinutes}" in row ${i+1}` : `Row ${i+1} is missing Auto Close Minutes`)
         if (!validFormats.includes(format))
-            errors.push(`Invalid format "${format}" in row ${i+1}`)
+            errors.push(format ? `Invalid format "${format}" in row ${i+1}` : `Row ${i+1} is missing the LQ format`)
         if (format === 'Poll')
             format = ''
+
+        if (openTimes.has(openTime))
+            errors.push(`The open time for row ${i+1} already exists`)
+        openTimes.add(openTime)
         data.push({
             row: i+1, 
             openTimeText: openTime, 
