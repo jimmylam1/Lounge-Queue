@@ -236,11 +236,14 @@ async function handleButtonAdd(interaction: ButtonInteraction) {
     const errors: string[] = []
     let successCount = 0
     for (let i = 0; i < cacheData.length; i++) {
+        let err: string = "unknown error"
         const {openTimeTimestamp, openTimeText, autoCloseMinutes, format} = cacheData[i]
         const endTime = openTimeTimestamp + 60000*autoCloseMinutes
-        const res = await addSchedule(interaction.guild!.id, openTimeTimestamp, endTime, format).catch(e => console.error(`schedule.ts handleButtonAdd()`, e))
+        const res = await addSchedule(interaction.guild!.id, openTimeTimestamp, endTime, format).catch(e => {
+            err = `${e}`.includes("UNIQUE constraint failed") ? "already exists" : `${e}`
+        })
         if (!res?.changes) {
-            console.error(`schedule.ts handleButtonAdd() failed to insert data. guild=${interaction.guild!.id} openTime=${openTimeText} autoClose=${autoCloseMinutes} format=${format}`)
+            console.error(`schedule.ts handleButtonAdd() (add from spreadsheet) failed, ${err}. guild=${interaction.guild!.id} openTime=${openTimeText} autoClose=${autoCloseMinutes} format=${format}`)
             errors.push(openTimeText)
         }
         else {
@@ -249,7 +252,7 @@ async function handleButtonAdd(interaction: ButtonInteraction) {
     }
     const schedules = successCount > 1 ? 'schedules' : 'schedule'
     if (errors.length)
-        return replyToButton(interaction, {content: `Successfully added ${successCount} ${schedules}, but the following schedules were not added due to some errors: ${errors.join(", ")}. This will happen if you try to add duplicates`, ephemeral: true})
+        return replyToButton(interaction, {content: `Successfully added ${successCount} ${schedules}, but the following schedules were not added: ${errors.join(", ")}. This will happen if they already exist`, ephemeral: true})
     delete addFromSpreadsheetCache[args[2]]
     return replyToButton(interaction, {content: `Successfully added ${successCount} ${schedules}`, ephemeral: true})
 }
