@@ -17,7 +17,7 @@ export const data: ApplicationCommandData = {
     options: [
         {
             name: "add",
-            description: "Add when a queue should automatically open",
+            description: "Add when a queue should auto open",
             type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
             options: [
                 {
@@ -43,12 +43,12 @@ export const data: ApplicationCommandData = {
         },
         {
             name: "add-from-spreadsheet",
-            description: "Add schedules from Google Sheets",
+            description: "Add queues from Google Sheets",
             type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
         },
         {
-            name: "remove",
-            description: "Remove a scheduled time",
+            name: "remove-one",
+            description: "Remove a scheduled queue",
             type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
             options: [
                 {
@@ -58,6 +58,11 @@ export const data: ApplicationCommandData = {
                     required: true
                 },
             ],
+        },
+        {
+            name: "remove-all",
+            description: "Remove all scheduled queues",
+            type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
         },
         {
             name: "list",
@@ -78,8 +83,10 @@ slashCommandEvent.on(data.name, async (interaction) => {
         handleAdd(interaction).catch(e => console.error(`schedule.ts handleAdd()`, e))
     else if (interaction.options.getSubcommand() == "add-from-spreadsheet")
         handleAddFromSpreadsheet(interaction).catch(e => console.error(`schedule.ts handleAddFromSpreadsheet()`, e))
-    else if (interaction.options.getSubcommand() == "remove")
+    else if (interaction.options.getSubcommand() == "remove-one")
         handleRemove(interaction).catch(e => console.error(`schedule.ts handleRemove()`, e))
+    else if (interaction.options.getSubcommand() == "remove-all")
+        handleRemoveAll(interaction).catch(e => console.error(`schedule.ts handleRemoveAll()`, e))
     else if (interaction.options.getSubcommand() == "list")
         handleList(interaction).catch(e => console.error(`schedule.ts handleList()`, e))
 })
@@ -282,6 +289,26 @@ async function handleRemove(interaction: CommandInteraction) {
     let text = "Successfully removed the scheduled queue.\n\nQueue list\n"
     text += await listSchedules(interaction.guild!.id, 4000)
     reply(interaction, {embeds: [{description: text}]})
+}
+
+async function handleRemoveAll(interaction: CommandInteraction) {
+    if (!interaction.channel || !(interaction.member instanceof GuildMember))
+        return
+
+    const canManage = await canManageLoungeQueue(interaction.member, interaction.guild!.id)
+    if (!canManage)
+        return reply(interaction, {content: 'You do not have permission to use this command', ephemeral: true})
+
+    await interaction.deferReply()
+
+    const res = await dbConnect(async db => {
+        return await db.execute("DELETE FROM schedule WHERE guildId = ?", [interaction.guildId])
+    }) 
+    
+    if (!res.changes)
+        return reply(interaction, `There are no scheduled queues to remove`)
+    const queues = res.changes > 1 ? 'queues' : 'queue'
+    reply(interaction, `Successfully removed ${res.changes} ${queues}`)
 }
 
 async function handleList(interaction: CommandInteraction) {
