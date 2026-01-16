@@ -36,6 +36,8 @@ export async function fetchSchedulesFromSheet(guildId: string) {
     let errors: string[] = []
     for (let i = 1; i < lines.length; i++) {
         let [openTime, autoCloseMinutes, format] = lines[i].split(",")
+        if (!openTime) // if blank
+            continue
         if (!validMinutes.includes(autoCloseMinutes))
             errors.push(autoCloseMinutes ? `Invalid minute "${autoCloseMinutes}" in row ${i+1}` : `Row ${i+1} is missing Auto Close Minutes`)
         if (!validFormats.includes(format))
