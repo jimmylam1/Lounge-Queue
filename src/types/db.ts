@@ -86,6 +86,12 @@ export type Subs = {
     expires: number;
 }
 
+export type StickySchedule = {
+    guildId: string;
+    channelId: string;
+    messageId: string;
+}
+
 ////////////////////////////////////////
 // helper types
 

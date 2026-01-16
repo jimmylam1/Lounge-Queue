@@ -1,5 +1,5 @@
-import { ApplicationCommandData, AutocompleteInteraction, ButtonInteraction, CommandInteraction, Constants, GuildMember, InteractionReplyOptions, MessageActionRow, MessageButton, MessageEmbedOptions } from "discord.js";
-import { autoCloseChoices } from "../../common/messageHelpers";
+import { ApplicationCommandData, AutocompleteInteraction, ButtonInteraction, CommandInteraction, Constants, GuildMember, InteractionReplyOptions, Message, MessageActionRow, MessageButton, MessageEmbedOptions } from "discord.js";
+import { autoCloseChoices, updateStickyScheduleMessage } from "../../common/messageHelpers";
 import { autocompleteEvent, buttonEvent, slashCommandEvent } from "../../common/discordEvents";
 import { guildConfig } from "../../common/data/guildConfig";
 import { canManageLoungeQueue } from "../../common/permissions";
@@ -7,9 +7,10 @@ import { reply, replyToButton, splitText } from "../../common/util";
 import { dbConnect } from "../../common/db/connect";
 import * as chrono from 'chrono-node'
 import { getConfig } from "../../common/dbHelpers";
-import { Schedule } from "../../types/db";
+import { Schedule, StickySchedule } from "../../types/db";
 import { fetchSchedulesFromSheet } from "../../common/spreadsheet";
 import { ScheduleRow } from "../../types/spreadsheet";
+import { listSchedules } from "../../common/textFormatters";
 
 export const data: ApplicationCommandData = {
     name: "schedule",
@@ -69,6 +70,11 @@ export const data: ApplicationCommandData = {
             description: "List the scheduled queues",
             type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
         },
+        {
+            name: "sticky-schedule",
+            description: "List up to the next 20 scheduled queues. Will auto update msg",
+            type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
+        },
     ]
 }
 
@@ -89,6 +95,8 @@ slashCommandEvent.on(data.name, async (interaction) => {
         handleRemoveAll(interaction).catch(e => console.error(`schedule.ts handleRemoveAll()`, e))
     else if (interaction.options.getSubcommand() == "list")
         handleList(interaction).catch(e => console.error(`schedule.ts handleList()`, e))
+    else if (interaction.options.getSubcommand() == "sticky-schedule")
+        handleStickySchedule(interaction).catch(e => console.error(`schedule.ts handleStickySchedule()`, e))
 })
 
 buttonEvent.on(data.name, async (interaction) => {
@@ -148,6 +156,7 @@ async function handleAdd(interaction: CommandInteraction) {
     const start = Math.floor(startTime / 1000)
     const end = Math.floor(endTime / 1000)
     reply(interaction, `Successfully added: **${format || 'Poll'}**: <t:${start}:f> - <t:${start}:R> - Start at <t:${end}:t>`)
+    updateStickyScheduleMessage(interaction.client, interaction.guildId!)
 }
 
 var addFromSpreadsheetCache: {[key:string]: ScheduleRow[]} = {}
@@ -261,7 +270,8 @@ async function handleButtonAdd(interaction: ButtonInteraction) {
     if (errors.length)
         return replyToButton(interaction, {content: `Successfully added ${successCount} ${schedules}, but the following schedules were not added: ${errors.join(", ")}. This will happen if they already exist`, ephemeral: true})
     delete addFromSpreadsheetCache[args[2]]
-    return replyToButton(interaction, {content: `Successfully added ${successCount} ${schedules}`, ephemeral: true})
+    replyToButton(interaction, {content: `Successfully added ${successCount} ${schedules}`, ephemeral: true})
+    updateStickyScheduleMessage(interaction.client, interaction.guildId!)
 }
 
 async function handleRemove(interaction: CommandInteraction) {
@@ -321,7 +331,7 @@ async function handleList(interaction: CommandInteraction) {
 
     await interaction.deferReply()
 
-    const text = await listSchedules(interaction.guild!.id, 20000) || 'There are no schedules to list'
+    const text = await listSchedules(interaction.guild!.id, 20000)
     const texts = splitText(text, "\n", 4000)
     for (let i = 0; i < texts.length; i++) {
         const embed: MessageEmbedOptions = {
@@ -348,24 +358,44 @@ async function removeQueueSchedule(guildId: string, startTime: number) {
     })  
 }
 
-async function listSchedules(guildId: string, charLimit=4000) {
-    const schedules = await dbConnect(async db => {
-        return await db.fetchAll<Schedule>("SELECT * FROM schedule WHERE guildId = ? ORDER BY startTime ASC", [guildId])
-    })
-    let text = ''
-    let extended = false
-    for (let i = 0; i < schedules.length; i++) {
-        const s = schedules[i]
-        const startTime = Math.floor(s.startTime/1000)
-        const endTime = Math.floor(s.endTime/1000)
-        if (text.length <= charLimit)
-            text += `\`#${i+1}\` **${s.format || 'Poll'}**: <t:${startTime}:f> - <t:${startTime}:R> - Start at <t:${endTime}:t>\n`
-        else
-            extended = true
+async function handleStickySchedule(interaction: CommandInteraction) {
+    if (!interaction.channel || !(interaction.member instanceof GuildMember))
+        return
+
+    const canManage = await canManageLoungeQueue(interaction.member, interaction.guild!.id)
+    if (!canManage)
+        return reply(interaction, {content: 'You do not have permission to use this command', ephemeral: true})
+
+    await interaction.deferReply({ephemeral: true})
+
+    // send the initial sticky message
+    const schedulesText = await listSchedules(interaction.guild!.id, 4000, true)
+    let msg: Message;
+
+    try {
+        msg = await interaction.channel.send({embeds: [{title: `Queue List`, description: schedulesText}]})
     }
-    if (extended)
-        text += "...\n"
-    return text
+    catch(e) {
+        console.error(`schedule.ts handleStickySchedule() send initial message failed: ${e}`)
+        return reply(interaction, `There was a problem sending the sticky schedule message in this channel`)
+    }
+
+    const existingStickySchedule = await dbConnect(async db => {
+        return await db.fetchOne<StickySchedule>("SELECT * FROM stickySchedule WHERE guildId = ?", [interaction.guildId])
+    })
+
+    await dbConnect(async db => {
+        await db.execute("DELETE FROM stickySchedule WHERE guildId = ?", [interaction.guildId])
+        await db.execute("INSERT INTO stickySchedule (guildId, channelId, messageId) VALUES (?, ?, ?)", [interaction.guildId, interaction.channelId, msg.id])
+    })
+
+    const added = existingStickySchedule ? "updated" : "added"
+    let text = `Successfully ${added} the sticky schedule. `
+    if (existingStickySchedule) {
+        const link = `https://discord.com/channels/${existingStickySchedule.guildId}/${existingStickySchedule.channelId}/${existingStickySchedule.messageId}`
+        text += `The [previous sticky schedule](${link}) in this server has been disabled and can be deleted`
+    }
+    return reply(interaction, text)
 }
 
 async function findOverlap(guildId: string, startTime: number, endTime: number) {

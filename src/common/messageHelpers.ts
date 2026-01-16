@@ -1,9 +1,9 @@
 import { ApplicationCommandOptionChoiceData, Client, CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbedOptions, TextChannel, ThreadChannel } from "discord.js";
 import { dbConnect } from "./db/connect";
 import { getRooms, list } from "./core";
-import { LoungeQueue, Votes } from "../types/db";
+import { LoungeQueue, StickySchedule, Votes } from "../types/db";
 import { guildConfig } from "./data/guildConfig";
-import { formatTeams, getLatestQueueMessageLink, getPollVotes, getScoreboard, listQueueRoom, roomFooter, scoreboardCommand } from "./textFormatters";
+import { formatTeams, getLatestQueueMessageLink, getPollVotes, getScoreboard, listQueueRoom, listSchedules, roomFooter, scoreboardCommand } from "./textFormatters";
 import { ThreadAutoArchiveDuration } from "discord-api-types/v10";
 import { FormatOption } from "../types/guildConfig";
 import { QueuePlayer } from "../types/player";
@@ -315,4 +315,20 @@ export async function deleteLookingForSubMessage(channel: TextChannel, rowId: nu
     if (message)
         await message.delete()
     return {success: true, message: ''}
+}
+
+export async function updateStickyScheduleMessage(client: Client, guildId: string) {
+    const stickySchedule = await dbConnect(async db => {
+        return await db.fetchOne<StickySchedule>("SELECT * FROM stickySchedule WHERE guildId = ?", [guildId])
+    })
+    if (!stickySchedule)
+        return
+
+    const channel = await client.channels.fetch(stickySchedule.channelId)
+    if (!(channel instanceof TextChannel))
+        return
+    const msg = await channel.messages.fetch(stickySchedule.messageId)
+
+    const schedulesText = await listSchedules(guildId, 4000, true)
+    await msg.edit({embeds: [{title: `Queue List`, description: schedulesText}]})
 }

@@ -80,4 +80,10 @@ const subs = `CREATE TABLE IF NOT EXISTS subs(
     UNIQUE (playerName, roomChannelId)
 )`
 
-export const tables = [config, staffRoles, loungeQueue, players, rooms, votes, schedule, subs]
+const stickySchedules = `CREATE TABLE IF NOT EXISTS stickySchedule(
+    guildId TEXT PRIMARY KEY NOT NULL,
+    channelId TEXT NOT NULL,
+    messageId TEXT NOT NULL
+) WITHOUT ROWID`
+
+export const tables = [config, staffRoles, loungeQueue, players, rooms, votes, schedule, subs, stickySchedules]

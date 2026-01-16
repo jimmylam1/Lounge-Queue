@@ -1,5 +1,5 @@
 import { dbConnect } from "./db/connect"
-import { Config, StaffRoles, Votes } from "../types/db";
+import { Config, Schedule, StaffRoles, Votes } from "../types/db";
 import { guildConfig } from "./data/guildConfig";
 import { QueuePlayer } from "../types/player";
 import { FormatOption } from "../types/guildConfig";
@@ -149,4 +149,33 @@ export async function getLatestQueueMessageLink(channelId: string) {
     if (!queue)
         return null
     return `https://discord.com/channels/${queue.guildId}/${queue.channelId}/${queue.messageId}`
+}
+
+export async function listSchedules(guildId: string, charLimit=4000, isStickySchedule=false) {
+    const schedules = await dbConnect(async db => {
+        return await db.fetchAll<Schedule>("SELECT * FROM schedule WHERE guildId = ? ORDER BY startTime ASC", [guildId])
+    })
+
+    if (schedules.length === 0)
+        return "There are no scheduled queues"
+    
+    let text = ''
+    let extended = false
+    let count = 0
+    for (let i = 0; i < schedules.length; i++) {
+        const s = schedules[i]
+        const startTime = Math.floor(s.startTime/1000)
+        const endTime = Math.floor(s.endTime/1000)
+        if (text.length <= charLimit || (isStickySchedule && count < 20)) {
+            count++
+            const numbering = isStickySchedule ? "-" : `\`#${i+1}\``
+            text += `${numbering} **${s.format || 'Poll'}**: <t:${startTime}:f> - <t:${startTime}:R> - Start at <t:${endTime}:t>\n`
+        }
+        else
+            extended = true
+    }
+    if (extended) {
+        text += isStickySchedule ? `(And ${schedules.length - count} more)` : "...\n"
+    }
+    return text
 }

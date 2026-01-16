@@ -1,7 +1,7 @@
 import { Client, TextChannel } from "discord.js"
 import { dbConnect } from "../common/db/connect"
 import { Config, LoungeQueue } from "../types/db"
-import { makeRooms, updateLoungeQueueMessage } from "../common/messageHelpers"
+import { makeRooms, updateLoungeQueueMessage, updateStickyScheduleMessage } from "../common/messageHelpers"
 import { closeQueue, getRooms } from "../common/core"
 import { getConfig } from "../common/dbHelpers"
 import { getTextChannel } from "../common/discordHelpers"
@@ -28,6 +28,7 @@ export async function closeQueues(client: Client) {
         await closeQueue(message.id)
         await updateLoungeQueueMessage(message, false)
         await makeRooms(message)
+        await updateStickyScheduleMessage(client, queue.guildId)
     }
 }
 
