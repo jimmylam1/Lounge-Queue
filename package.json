@@ -8,7 +8,7 @@
     "dev": "tsx loungeQueue.ts",
     "start": "node dist/loungeQueue.js",
     "build": "tsup loungeQueue.ts --minify",
-    "deploy": "tsx ./src/deploy/deployPublicCommands.ts"
+    "deploycmds": "tsx ./src/deploy/deployPublicCommands.ts"
   },
   "author": "",
   "license": "ISC",

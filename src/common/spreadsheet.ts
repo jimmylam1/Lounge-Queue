@@ -30,7 +30,6 @@ export async function fetchSchedulesFromSheet(guildId: string) {
     const text = await res.text()
     const data: RawScheduleRow[] = []
     const lines = text.split("\n")
-    const validMinutes = ['30', '45', '60', '75', '90']
     const validFormats = ['Poll', 'FFA', '2v2', '4v4']
     const openTimes = new Set<string>()
     let errors: string[] = []
@@ -38,8 +37,9 @@ export async function fetchSchedulesFromSheet(guildId: string) {
         let [openTime, autoCloseMinutes, format] = lines[i].split(",")
         if (!openTime) // if blank
             continue
-        if (!validMinutes.includes(autoCloseMinutes))
-            errors.push(autoCloseMinutes ? `Invalid minute "${autoCloseMinutes}" in row ${i+1}` : `Row ${i+1} is missing Auto Close Minutes`)
+        const parsedAuroCloseMinutes = parseInt(autoCloseMinutes)
+        if (isNaN(parsedAuroCloseMinutes))
+            errors.push(`Row ${i+1} is missing Auto Close Minutes`)
         if (!validFormats.includes(format))
             errors.push(format ? `Invalid format "${format}" in row ${i+1}` : `Row ${i+1} is missing the LQ format`)
         if (format === 'Poll')
@@ -51,7 +51,7 @@ export async function fetchSchedulesFromSheet(guildId: string) {
         data.push({
             row: i+1, 
             openTimeText: openTime, 
-            autoCloseMinutes: parseInt(autoCloseMinutes), 
+            autoCloseMinutes: parsedAuroCloseMinutes, 
             format
         })
     }

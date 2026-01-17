@@ -31,7 +31,6 @@ export const data: ApplicationCommandData = {
                     name: "auto-close",
                     description: "The number of minutes until the queue closes.",
                     type: Constants.ApplicationCommandOptionTypes.INTEGER,
-                    choices: autoCloseChoices(false),
                     required: true
                 },
                 {
