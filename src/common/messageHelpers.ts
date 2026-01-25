@@ -9,6 +9,7 @@ import { FormatOption } from "../types/guildConfig";
 import { QueuePlayer } from "../types/player";
 import { fetchQueueFromDb, getPlayersInRoom, getSubRowFromDb, markQueueMadeRooms } from "./dbHelpers";
 import { SuccessStatus } from "../types/loungeQueue";
+import { sleep } from "./util";
 
 export const blankQueueList = "`Queue List`\n"
                             + "\n"
@@ -138,6 +139,49 @@ export async function checkQueueMessageLink(interaction: CommandInteraction) {
 }
 
 export async function makeRooms(message: Message) {
+    /**
+     *  Try up to 5 times to create thread channel
+     */
+    async function createRoomThreadChannel(i: number, _count=0) {
+        if (_count >= 5 || !(message.channel instanceof TextChannel)) {
+            console.error(`messageHelpers.ts makeRooms() createRoomThreadChannel() returning null`)
+            return null
+        }
+        try {
+            return await message.channel.threads.create({
+                name: `Room ${i+1}`,
+                type: 'GUILD_PRIVATE_THREAD',
+                invitable: false,
+                autoArchiveDuration: ThreadAutoArchiveDuration.OneHour
+            })
+        }
+        catch(e) {
+            console.error(`messageHelpers.ts makeRooms() createRoomThreadChannel() failed - ${e} - Retrying, ${_count+1}/5`)
+            await sleep(5000)
+            return await createRoomThreadChannel(i, _count+1)
+        }
+    }
+
+    /**
+     *  Try up to 5 times to send message to channel
+     */
+    async function sendMessageToChannel(channel: TextChannel | ThreadChannel, text: string, _count=0) {
+        if (_count >= 5) {
+            console.error(`messageHelpers.ts makeRooms() sendMessageToChannel() returning null`)
+            return null
+        }
+        try {
+            await channel.send(text)
+        }
+        catch(e) {
+            console.error(`messageHelpers.ts makeRooms() sendMessageToChannel() failed - ${e} - Retrying, ${_count+1}/5`)
+            await sleep(5000)
+            return await sendMessageToChannel(channel, text, _count+1)
+        }
+    }
+
+    // --------------------------------------------------------------------------
+
     if (!message.guild)
         throw new Error('The guild for the provided message is unavailable')
     if (!(message.channel instanceof TextChannel))
@@ -157,25 +201,24 @@ export async function makeRooms(message: Message) {
         return
     }
 
-    await message.reply(`Creating rooms for this Lounge Queue`)
+    await message.reply(`Creating rooms for this Lounge Queue`).catch(console.error)
 
     for (let i = 0; i < roomInfo.rooms.length; i++) {
-        const channel = await message.channel.threads.create({
-            name: `Room ${i+1}`,
-            type: 'GUILD_PRIVATE_THREAD',
-            invitable: false,
-            autoArchiveDuration: ThreadAutoArchiveDuration.OneHour
-        })
+        const channel = await createRoomThreadChannel(i)
 
         for (let botId of guildConfig[message.guild.id].botAccess) {
             const bot = await message.guild.members.fetch(botId).catch(e => console.error(`messageHelpers.ts makeRooms failed to fetch bot ${botId} ${e}`))
             if (!bot || !message.channel.permissionsFor(bot).has('VIEW_CHANNEL'))
                 continue
-            await channel.members.add(botId).catch(e => console.error(`makeRooms() failed to add bot ${botId} to room ${channel.id} ${e}`))
+            if (channel)
+                await channel.members.add(botId).catch(e => console.error(`makeRooms() failed to add bot ${botId} to room ${channel.id} ${e}`))
         }
 
-        const roomText = await listQueueRoom(roomInfo.rooms[i], i+1, channel.id)
-        await message.channel.send(roomText)
+        const roomText = await listQueueRoom(roomInfo.rooms[i], i+1, channel?.id || null)
+        await sendMessageToChannel(message.channel, roomText)
+        if (!channel)
+            continue
+
         await setPlayerRooms(roomInfo.rooms[i], roomInfo.queue.id, channel.id)
 
         let channelText = `${roomInfo.rooms[i].map(p => `<@${p.discordId}>`).join(', ')}\n\n`
@@ -192,9 +235,9 @@ export async function makeRooms(message: Message) {
                 return await db.execute("INSERT INTO rooms (roomChannelId, queue, createdAt, scoreboard) VALUES (?, ?, ?, ?)", [channel.id, roomInfo.queue!.id, Date.now(), scoreboard])
             })
         }
-        await channel.send(channelText)
+        await sendMessageToChannel(channel, channelText)
         if (!roomInfo.queue.format)
-            await createPoll(channel, roomInfo.queue)
+            await createPoll(channel, roomInfo.queue).catch(e => console.error(`messageHelpers.ts createPoll() failed: ${e}`))
     }
 
     if (roomInfo.latePlayers.length) {
@@ -202,7 +245,7 @@ export async function makeRooms(message: Message) {
         for (let i = 0; i < roomInfo.latePlayers.length; i++) {
             text += `${i+1}. ${roomInfo.latePlayers[i].name} (${roomInfo.latePlayers[i].mmr} MMR)\n`
         }
-        await message.channel.send(text)
+        await sendMessageToChannel(message.channel, text)
     }
     await markQueueMadeRooms(message.id)
 }

@@ -49,8 +49,8 @@ export async function listConfig(guildId: string) {
  * @param players This should be a sorted array
  * @param roomNumber The room number
  */
-export async function listQueueRoom(players: QueuePlayer[], roomNumber: number, threadChannelId: string) {
-    let text = `**Room ${roomNumber}** -- <#${threadChannelId}>\n`
+export async function listQueueRoom(players: QueuePlayer[], roomNumber: number, threadChannelId: string | null) {
+    let text = `**Room ${roomNumber}** -- ` + (threadChannelId ? `<#${threadChannelId}>\n` : `Error creating room\n`)
     for (let i = 0; i < players.length; i++) {
         text += `${i+1}. ${players[i].name} (${players[i].mmr} MMR)\n`
     }
