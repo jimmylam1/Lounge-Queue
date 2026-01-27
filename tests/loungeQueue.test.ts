@@ -164,7 +164,7 @@ describe('loungeQueueTests', () => {
         + "6. Player 6 (2000 MMR)\n"
         + "7. Player 7 (2250 MMR)\n"
         + "\n"
-        + "(+1 players for 1 full room)"
+        + "(+1 player for 1 full room)"
         await expect(list('0')).resolves.toHaveProperty('message', expected)
 
         // 8 players

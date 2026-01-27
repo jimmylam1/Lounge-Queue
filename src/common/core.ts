@@ -76,7 +76,9 @@ export async function list(messageId: string): Promise<SuccessStatus> {
                 text += "\n"
             const fullRoomsCount = currentFullRoomsCount(players.length, config.roomSize) + 1
             const rooms = fullRoomsCount > 1 ? "rooms" : "room"
-            text += `(+${playersNeededForFullRooms(players.length, config.roomSize)} players for ${fullRoomsCount} full ${rooms})`;
+            const playersNeeded = playersNeededForFullRooms(players.length, config.roomSize)
+            const playersPlural = playersNeeded > 1 ? "players" : "player"
+            text += `(+${playersNeeded} ${playersPlural} for ${fullRoomsCount} full ${rooms})`;
         }
         return {success: true, message: text};
     })
